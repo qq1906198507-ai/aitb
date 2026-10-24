@@ -1,0 +1,21 @@
+# 依赖与本地运行状态
+prototype/backend/node_modules/
+prototype/backend/storage/
+
+# 本机构建与临时产物
+.build-docx/
+.codex-build-techwhite/
+.codex-build-techwhite-v2/
+.qoder-office-pptx-locks/
+NVIDIA Corporation/
+
+# 与本比赛无关的本地工具指南及其素材
+cc-switch-guide.md
+codex-relay-guide.md
+assets/cc-switch/
+assets/relay-create-key.png
+assets/techwhite-v2/
+
+# 系统文件
+Thumbs.db
+Desktop.ini

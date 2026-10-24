@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刚好·净省凑单 - 产品原型</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="demo-nav.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🛒</span>
+                <span class="logo-text">美味外卖</span>
+            </div>
+            <div class="user-info">
+                <span class="user-name">张先生</span>
+                <span class="user-avatar">👤</span>
+            </div>
+        </header>
+        <nav class="project-nav" aria-label="项目页面">
+            <a href="demo.html">演示中心</a><a href="mobile-api.html">联动体验</a><a href="dashboard.html">数据看板</a><a href="history.html">操作记录</a>
+            <a href="research.html">任务评估</a>
+            <a href="index.html" aria-current="page">PC版</a><a href="mobile.html">静态移动版</a>
+        </nav>
+        <p class="static-notice">静态演示 · 本页操作不计入看板。体验组合凑单与统计，请进入<a href="mobile-api.html">联动体验</a>。</p>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 左侧：购物车 -->
+            <section class="cart-section">
+                <div class="section-header">
+                    <h2>购物车</h2>
+                    <span class="cart-count" id="cartCount">3件商品</span>
+                </div>
+                
+                <div class="cart-items" id="cartItems">
+                    <!-- 动态生成 -->
+                </div>
+
+                <!-- 可加购商品推荐 -->
+                <div class="recommend-section">
+                    <h3>🎯 凑单推荐</h3>
+                    <div class="recommend-items" id="recommendItems">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 右侧：结算信息 -->
+            <section class="checkout-section">
+                <div class="section-header">
+                    <h2>订单结算</h2>
+                </div>
+
+                <div class="price-summary">
+                    <div class="price-row">
+                        <span>商品原价</span>
+                        <span class="price" id="originalPrice">¥0.00</span>
+                    </div>
+                    <div class="price-row">
+                        <span>配送费</span>
+                        <span class="price" id="deliveryFee">¥0.00</span>
+                    </div>
+                    <div class="price-row discount">
+                        <span>满减优惠</span>
+                        <span class="price negative" id="fullReduction">-¥0.00</span>
+                    </div>
+                    <div class="price-row discount">
+                        <span>优惠券</span>
+                        <span class="price negative" id="coupon">-¥0.00</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="price-row total">
+                        <span>实付金额</span>
+                        <span class="price highlight" id="totalPrice">¥0.00</span>
+                    </div>
+                </div>
+
+                <!-- 优惠说明 -->
+                <div class="promotion-info" id="promotionInfo">
+                    <!-- 动态生成 -->
+                </div>
+
+                <button class="checkout-btn" id="checkoutBtn">
+                    去结算
+                </button>
+
+                <!-- 净省提示 -->
+                <div class="netsave-hint" id="netsaveHint" style="display: none;">
+                    <div class="hint-icon">💡</div>
+                    <div class="hint-content">
+                        <div class="hint-title" id="hintTitle"></div>
+                        <div class="hint-desc" id="hintDesc"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 净省建议弹窗 -->
+        <div class="modal" id="netsaveModal" style="display: none;">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>💰 净省建议</h3>
+                    <button class="modal-close" id="modalClose">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="suggestion-card">
+                        <div class="suggestion-title" id="suggestionTitle"></div>
+                        <div class="suggestion-detail" id="suggestionDetail"></div>
+                    </div>
+                    
+                    <div class="calculation-process">
+                        <h4>计算过程</h4>
+                        <div class="calc-step" id="calcStep1"></div>
+                        <div class="calc-step" id="calcStep2"></div>
+                        <div class="calc-step" id="calcStep3"></div>
+                        <div class="calc-result" id="calcResult"></div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn-secondary" id="rejectBtn">不加购</button>
+                        <button class="btn-primary" id="acceptBtn">采纳建议</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="algorithm.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

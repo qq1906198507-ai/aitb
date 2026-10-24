@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刚好 · 凑单历史记录</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="history.css">
+    <script src="history-app.js" defer></script>
+</head>
+<body>
+    <main class="dashboard history-page">
+        <header class="header">
+            <div>
+                <div class="eyebrow">刚好 · NETSAVE</div>
+                <h1>每次选择，都能回看。</h1>
+                <p class="subtitle">凑单历史记录 · 查看净省方案与起送补单的采纳、忽略和撤销。</p>
+            </div>
+            <a class="btn btn-primary" href="mobile-api.html">继续体验凑单 <span aria-hidden="true">↗</span></a>
+        </header>
+        <nav class="page-nav" aria-label="产品页面">
+            <a href="mobile-api.html">联动演示</a><a href="dashboard.html">数据看板</a><span class="nav-current" aria-current="page">历史记录</span><a href="research.html">任务评估</a><a href="index.html">PC 原型</a><a href="mobile.html">静态移动端</a>
+        </nav>
+        <section class="status-strip" aria-label="历史数据连接状态">
+            <div>
+                <p class="connection" id="historyConnection" role="status">正在读取本机记录…</p>
+                <p class="update-time" id="historyUpdatedAt">进入页面或点击刷新时获取最新记录 · 北京时间</p>
+            </div>
+            <button class="btn btn-secondary" id="historyRefreshBtn" type="button">刷新记录</button>
+        </section>
+        <p class="data-note">这些记录来自本机演示，未发生真实支付。净省方案比较可下单购物车的前后实付；<strong>起送补单的原购物车不可下单</strong>，只展示补单后实付与估算变化，不计为净省。撤销保留原采纳记录，净省方案的预计净省会从看板扣回。</p>
+        <section class="history-panel" aria-labelledby="historyTitle">
+            <div class="section-header">
+                <div><h2 id="historyTitle">操作记录</h2><p id="historyCount">等待获取记录</p></div>
+                <span class="local-tag">按时间倒序</span>
+            </div>
+            <div class="history-filters" role="group" aria-label="筛选记录类型">
+                <button class="filter-btn selected" type="button" data-type="all" aria-pressed="true">全部</button>
+                <button class="filter-btn" type="button" data-type="accepted" aria-pressed="false">采纳</button>
+                <button class="filter-btn" type="button" data-type="rejected" aria-pressed="false">忽略</button>
+                <button class="filter-btn" type="button" data-type="reverted" aria-pressed="false">撤销</button>
+            </div>
+            <div class="history-message" id="historyMessage" role="status" aria-live="polite"></div>
+            <div class="history-list" id="historyList" role="list" aria-label="凑单操作记录">
+                <div class="empty-state"><strong>正在读取记录…</strong><p>首次体验后，记录会显示在这里。</p></div>
+            </div>
+            <div class="history-pagination">
+                <button class="btn btn-secondary" id="historyRetryBtn" type="button" hidden>重试</button>
+                <button class="btn btn-secondary" id="historyMoreBtn" type="button" hidden>加载更多</button>
+                <p id="historyEndNote"></p>
+            </div>
+        </section>
+        <footer>刚好 · 不劝你多买，只帮你少花。<span>只读历史 · 仅展示采纳、忽略与撤销操作</span></footer>
+    </main>
+</body>
+</html>

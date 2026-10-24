@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刚好·净省凑单 - API版原型</title>
+    <link rel="stylesheet" href="mobile-styles.css">
+    <link rel="stylesheet" href="demo-nav.css">
+    <style>
+        .api-status {
+            background: #F0FDF4;
+            border: 1px solid #10B981;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin: 8px 16px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #047857;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .api-status.error {
+            background: #FEF2F2;
+            border-color: #EF4444;
+            color: #B91C1C;
+        }
+        .api-status.loading {
+            background: #EFF6FF;
+            border-color: #2563EB;
+            color: #1D4ED8;
+        }
+        .retry-btn {
+            margin-left: auto;
+            flex-shrink: 0;
+            border: 1px solid currentColor;
+            background: transparent;
+            color: inherit;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .server-badge {
+            background: #2563EB;
+            color: #FFFFFF;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .empty-tip {
+            padding: 20px 0;
+            text-align: center;
+            font-size: 13px;
+            color: #64748B;
+        }
+        .flash-tag {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 1px 5px;
+            border-radius: 4px;
+            background: #FEF3C7;
+            color: #B45309;
+            font-size: 10px;
+            font-weight: 600;
+            vertical-align: middle;
+        }
+        .origin-price {
+            margin-left: 4px;
+            font-size: 11px;
+            font-weight: 400;
+            color: #94A3B8;
+        }
+        .recommend-item {
+            position: relative;
+        }
+        .recommend-item.suggested {
+            border-color: #2563EB;
+            background: #EFF6FF;
+        }
+        .save-badge {
+            position: absolute;
+            top: -8px;
+            right: 8px;
+            background: #047857;
+            color: #FFFFFF;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+        .toast {
+            position: absolute;
+            left: 50%;
+            bottom: 96px;
+            transform: translate(-50%, 8px);
+            width: max-content;
+            max-width: 85%;
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.92);
+            color: #FFFFFF;
+            font-size: 13px;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 50;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+        .checkout-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .demo-guide { margin: 12px 16px; padding: 12px; background: #EFF6FF; border-radius: 10px; color: #475569; font-size: 12px; line-height: 1.7; }
+        .demo-guide strong { display: block; color: #1E40AF; font-size: 13px; }
+        .demo-guide button { margin-top: 6px; border: 0; background: transparent; color: #1D4ED8; cursor: pointer; font: inherit; text-decoration: underline; }
+        button.recommend-item { font: inherit; color: inherit; width: 100%; }
+        button:disabled { cursor: not-allowed; opacity: .55; }
+        .modal-status { margin: 12px 0; font-size: 12px; line-height: 1.6; color: #475569; }
+        .modal-status.error { color: #B91C1C; }
+        .modal-status button { color: #1D4ED8; background: transparent; border: 0; text-decoration: underline; cursor: pointer; margin-left: 8px; }
+    </style>
+    <link rel="stylesheet" href="mobile-api-extra.css">
+</head>
+<body class="api-demo">
+    <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+            <div class="status-bar">
+                <span class="time">14:30</span>
+                <div class="status-icons">
+                    <span>📶</span>
+                    <span>🔋</span>
+                </div>
+            </div>
+
+            <header class="app-header">
+                <div class="header-left">
+                    <a class="back-btn" href="dashboard.html" aria-label="前往数据看板">←</a>
+                    <span class="shop-name">美味外卖·中关村店</span>
+                </div>
+                <div class="header-right">
+                    <span class="server-badge">API版</span>
+                </div>
+            </header>
+            <nav class="project-nav" aria-label="项目页面">
+                <a href="demo.html">演示中心</a>
+                <a href="mobile-api.html" aria-current="page">联动体验</a>
+                <a href="dashboard.html">数据看板</a>
+                <a href="history.html">历史记录</a>
+                <a href="research.html">任务评估</a>
+                <a href="index.html">PC版</a>
+                <a href="mobile.html">静态版</a>
+            </nav>
+
+            <div class="api-status loading" id="apiStatus" role="status" aria-live="polite">
+                <span>🔄</span>
+                <span>正在连接后端服务...</span>
+            </div>
+
+            <main class="app-content">
+                <section class="demo-guide">
+                    <strong>先满足起送，再算是否值得加购</strong>
+                    本机演示：采纳或忽略建议后，看板会记录本次选择；不产生真实订单。
+                    <div class="scenario-actions"><button id="resetCartBtn" type="button">满减净省示例</button><button id="minimumCartBtn" type="button">起送补单示例</button></div>
+                </section>
+                <div class="order-status" id="orderStatus" role="status" aria-live="polite">计算后显示起送状态</div>
+                <details class="preferences-panel" id="preferencesPanel">
+                    <summary id="preferencesSummary">少买偏好</summary>
+                    <form id="preferencesForm">
+                        <fieldset id="preferenceFields">
+                            <div class="preference-grid">
+                                <label>加购商品预算（元）<input id="budgetInput" type="number" min="0" max="1000" step="0.01" value="10" placeholder="留空不限预算"></label>
+                                <label>最多加购件数<select id="maxItemsInput"><option value="0">不加购</option><option value="1">1 件</option><option value="2">2 件</option><option value="3" selected>3 件</option><option value="4">4 件</option></select></label>
+                            </div>
+                            <label class="strategy-label">优先考虑<select id="strategyInput"><option value="saving">支出更低</option><option value="fewer">购买件数更少</option><option value="preference">符合我的偏好</option></select></label>
+                            <p class="preference-caption">不想加购的商品</p>
+                            <div class="excluded-products" id="excludedProducts"></div>
+                            <p class="preference-help">仅限制推荐加购，不改已选商品。预算按加购商品金额计算，包装与配送另列。</p>
+                            <button class="apply-preferences" type="submit">应用偏好并重新比较</button>
+                        </fieldset>
+                        <p id="preferencesError" class="preferences-error" role="alert"></p>
+                    </form>
+                </details>
+                <div class="progress-hint" id="progressHint" style="display: none;">
+                    <div class="hint-content">
+                        <span class="hint-icon">💰</span>
+                        <span class="hint-text" id="hintText"></span>
+                    </div>
+                    <button class="hint-action" id="hintAction" type="button">查看建议</button>
+                </div>
+
+                <section class="cart-section">
+                    <div class="section-title">
+                        <h2>已选商品</h2>
+                        <span class="item-count" id="itemCount">--件</span>
+                    </div>
+                    <div class="cart-list" id="cartList">
+                        <div class="empty-tip">加载中...</div>
+                    </div>
+                </section>
+
+                <details class="price-details" id="priceDetails">
+                    <summary>价格明细与优惠规则</summary>
+                    <div class="price-details-body">
+                        <div id="priceBreakdown" aria-label="当前购物车价格明细">
+                            <p class="section-empty">计算后显示价格明细。</p>
+                        </div>
+                        <div class="promotion-rules" id="promotionRules" aria-label="优惠规则"></div>
+                    </div>
+                </details>
+
+                <section class="undo-bar" id="undoBar" style="display: none;" aria-label="撤销上次加购">
+                    <div class="undo-content">
+                        <strong id="undoText">已采纳一条凑单建议。</strong>
+                        <p id="undoDescription">撤销后恢复原购物车，看板同步调整预计净省。</p>
+                    </div>
+                    <button id="undoBtn" class="undo-btn" type="button">撤销上次加购</button>
+                    <div id="undoStatus" class="undo-status" role="status" aria-live="polite"></div>
+                </section>
+
+                <section class="plans-section" id="plansSection" aria-labelledby="plansTitle">
+                    <div class="section-title">
+                        <h2 id="plansTitle">可选凑单方案</h2>
+                        <span class="section-kicker" id="plansKicker">按你的预算和偏好比较</span>
+                    </div>
+                    <p class="plans-status" id="plansStatus" role="status" aria-live="polite">计算完成后显示可选方案。</p>
+                    <div class="alternative-plans" id="alternativePlans"></div>
+                </section>
+
+                <section class="recommend-section">
+                    <div class="section-title">
+                        <h2>🎯 凑单推荐</h2>
+                        <span class="recommend-hint" id="calcHint">服务端计算</span>
+                    </div>
+                    <div class="recommend-list" id="recommendList">
+                        <!-- 动态生成 -->
+                    </div>
+                </section>
+            </main>
+
+            <footer class="checkout-bar">
+                <div class="price-info">
+                    <div class="price-row">
+                        <span class="label">商品：</span>
+                        <span class="value" id="subtotal">--</span>
+                        <span class="value" id="delivery"></span>
+                    </div>
+                    <div class="price-row">
+                        <span class="label">优惠：</span>
+                        <span class="value discount" id="discount">--</span>
+                    </div>
+                    <div class="price-row total">
+                        <span class="label" id="totalLabel">实付：</span>
+                        <span class="value" id="total">--</span>
+                    </div>
+                </div>
+                <button class="checkout-btn" id="checkoutBtn" type="button" disabled>查看最省方案</button>
+            </footer>
+        </div>
+    </div>
+
+    <div class="modal" id="netsaveModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">💰 净省建议</h3>
+                <button class="modal-close" id="modalClose" type="button" aria-label="关闭">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="suggestion-card">
+                    <div class="suggestion-title" id="suggestionTitle"></div>
+                    <div class="suggestion-detail" id="suggestionDetail"></div>
+                </div>
+
+                <div class="calculation-process">
+                    <h4>计算过程</h4>
+                    <div class="calc-step" id="calcStep1"></div>
+                    <div class="calc-step" id="calcStep2"></div>
+                    <div class="calc-step" id="calcStep3"></div>
+                    <div class="calc-result" id="calcResult"></div>
+                </div>
+
+                <div class="plan-choice" id="planChoice" aria-label="切换凑单方案"></div>
+                <p class="quote-expiry" id="quoteExpiry" role="timer" aria-live="off">金额以当前优惠为准</p>
+
+                <details class="performance-metrics performance-details">
+                    <summary>计算表现</summary>
+                    <div class="performance-detail-body">
+                    <div class="metric-row">
+                        <span class="metric-label">计算耗时（服务端）</span>
+                        <span class="metric-value" id="calcTime">--</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">候选商品 / 方案</span>
+                        <span class="metric-value" id="candidateCount">--</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">P99 延迟</span>
+                        <span class="metric-value" id="p99Time">--</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">端到端往返</span>
+                        <span class="metric-value" id="roundTrip">--</span>
+                    </div>
+                    </div>
+                </details>
+
+                <div id="modalStatus" class="modal-status" role="status" aria-live="polite"></div>
+                <div class="action-buttons">
+                    <button class="btn-secondary" id="rejectBtn" type="button">不加购</button>
+                    <button class="btn-primary" id="acceptBtn" type="button">采纳建议</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="mobile-api-app.js"></script>
+</body>
+</html>

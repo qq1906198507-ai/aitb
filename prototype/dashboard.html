@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刚好 · 本地演示看板</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="dashboard-app.js" defer></script>
+</head>
+<body>
+    <main class="dashboard">
+        <header class="header">
+            <div>
+                <div class="eyebrow">刚好 · NETSAVE</div>
+                <h1>每次决定，都有依据。</h1>
+                <p class="subtitle">本地演示看板 · 记录建议展示、采纳、忽略与撤销，观察实际计算表现。</p>
+            </div>
+            <a class="btn btn-primary" href="mobile-api.html">去体验凑单 <span aria-hidden="true">↗</span></a>
+        </header>
+        <nav class="page-nav" aria-label="产品页面">
+            <a href="mobile-api.html">联动演示</a><span class="nav-current" aria-current="page">数据看板</span><a href="history.html">历史记录</a><a href="research.html">任务评估</a><a href="index.html">PC 原型</a><a href="mobile.html">静态移动端</a>
+        </nav>
+        <section class="status-strip" aria-label="数据连接状态">
+            <div>
+                <p class="connection" id="connectionStatus" role="status">正在连接本地服务…</p>
+                <p class="update-time" id="updatedAt">尚未获取数据 · 连接后每 2 秒自动更新</p>
+            </div>
+            <div class="toolbar">
+                <button class="btn btn-secondary" id="refreshBtn" type="button">刷新</button>
+                <label class="sr-only" for="exportFormat">导出格式</label>
+                <select id="exportFormat" aria-label="导出格式"><option value="json">JSON</option><option value="csv">CSV</option></select>
+                <button class="btn btn-secondary" id="exportBtn" type="button" disabled>导出数据</button>
+                <button class="btn btn-secondary" id="resetBtn" type="button" disabled
+                    title="清空本机演示事件与计算性能样本；需二次确认，任务评估页的浏览器记录不受影响">清空演示数据</button>
+            </div>
+        </section>
+        <p class="data-note">数据来自本机演示，未接入真实订单或支付。<strong>起送补单的原购物车不可下单，不计为净省</strong>；预计净省仅来自未撤销的净省方案。采纳率统计两类有效采纳与忽略，关闭弹窗不算忽略。</p>
+        <section class="metrics-grid" aria-label="演示操作指标">
+            <article class="metric-card accent">
+                <div class="metric-top"><span>累计预计净省</span><span class="metric-icon" aria-hidden="true">¥</span></div>
+                <div class="metric-value" id="totalSaved">—</div><p class="metric-detail">未撤销净省方案的预计净省总和</p>
+            </article>
+            <article class="metric-card">
+                <div class="metric-top"><span>平均采纳净省</span><span class="metric-icon" aria-hidden="true">↗</span></div>
+                <div class="metric-value" id="avgSaving">—</div><p class="metric-detail">累计预计净省 ÷ 全部有效采纳</p><p class="metric-detail">含起送补单的 0 净省贡献</p>
+            </article>
+            <article class="metric-card">
+                <div class="metric-top"><span>建议采纳率</span><span class="metric-icon" aria-hidden="true">✓</span></div>
+                <div class="metric-value" id="adoptionRate">—</div><p class="metric-detail">有效采纳 ÷（有效采纳 + 忽略）</p>
+            </article>
+            <article class="metric-card">
+                <div class="metric-top"><span>已采纳（未撤销）</span><span class="metric-icon" aria-hidden="true">＋</span></div>
+                <div class="metric-value" id="acceptedCount">—</div><p class="metric-detail" id="acceptedKindsDetail">净省采纳 — 次 · 起送转化 — 次（不可下单→可下单）</p><p class="metric-detail" id="shownDetail">展示 — 次 · 未决定 — 次</p><p class="metric-detail" id="revertedDetail">已撤销 — 次 · 原记录仍保留</p>
+            </article>
+        </section>
+        <section class="performance-panel" aria-labelledby="performanceTitle">
+            <div class="performance-header">
+                <div><h2 id="performanceTitle">算法实际表现</h2><p>当前服务进程最近最多 1,000 次计算，重启后重新采样。</p></div>
+                <span class="performance-badge" id="performanceBadge">等待实测样本</span>
+            </div>
+            <div class="performance-grid">
+                <div class="performance-item"><div class="performance-label">平均计算耗时</div><div class="performance-value"><span id="avgCalcTime">—</span><small>ms</small></div></div>
+                <div class="performance-item"><div class="performance-label">P99 计算耗时</div><div class="performance-value"><span id="p99CalcTime">—</span><small>ms</small></div></div>
+                <div class="performance-item"><div class="performance-label">实测样本数</div><div class="performance-value"><span id="sampleCount">—</span><small>次</small></div></div>
+            </div>
+        </section>
+        <div class="charts-grid">
+            <section class="chart-card" aria-labelledby="trendTitle">
+                <div class="section-header"><div><h2 id="trendTitle">近 7 天预计净省</h2><p>按采纳日期统计 · 北京时间</p></div><span class="legend"><i></i>预计净省</span></div>
+                <div class="bar-chart" id="trendChart" role="img" aria-label="等待净省趋势数据"><div class="chart-loading">连接后显示趋势</div></div>
+                <p class="chart-hint" id="trendHint">体验一次凑单，观察数据变化。</p>
+            </section>
+            <section class="chart-card" aria-labelledby="adoptionTitle">
+                <div class="section-header"><div><h2 id="adoptionTitle">建议的下一步</h2><p>含净省与起送补单，统计未撤销采纳与忽略</p></div></div>
+                <div class="pie-chart" id="adoptionChart" role="img" aria-label="暂无决策样本"><div class="pie-center"><strong id="pieValue">—</strong><span>采纳率</span></div></div>
+                <div class="decision-counts"><span><i class="dot accepted"></i>有效采纳 <strong id="acceptedLegend">—</strong></span><span><i class="dot rejected"></i>忽略 <strong id="rejectedLegend">—</strong></span></div>
+                <p class="chart-hint" id="decisionHint">尚无决策数据</p>
+            </section>
+        </div>
+        <section class="events-card" aria-labelledby="eventsTitle">
+            <div class="section-header"><div><h2 id="eventsTitle">最近演示记录</h2><p>每条记录对应实际操作，重复提交不会重复计数。</p></div><a class="history-link" href="history.html">查看全部记录 <span aria-hidden="true">→</span></a></div>
+            <div id="eventsList" class="events-list"><div class="empty-state"><strong>等待连接本地服务</strong><p>首次使用时请先启动后端服务。</p></div></div>
+        </section>
+        <footer>刚好 · 不劝你多买，只帮你少花。<span>演示行为保存在本机，刷新页面后仍可查看。</span></footer>
+    </main>
+</body>
+</html>

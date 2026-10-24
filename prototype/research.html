@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f5f7fb">
+    <title>任务评估 · 刚好净省</title>
+    <link rel="stylesheet" href="research.css">
+    <script src="research-app.js" defer></script>
+</head>
+<body>
+    <main class="study-shell">
+        <header class="study-header">
+            <div>
+                <p class="eyebrow">刚好 · 研究工具</p>
+                <h1>凑单任务评估</h1>
+                <p class="subtitle">用一致的示例场景观察选择过程，记录决策时间、金额判断与加购意愿。</p>
+            </div>
+            <a class="button primary" href="mobile-api.html">打开产品演示 ↗</a>
+        </header>
+        <nav class="study-nav" aria-label="项目页面">
+            <a href="mobile-api.html">联动演示</a><a href="dashboard.html">产品看板</a><a href="history.html">操作记录</a><span aria-current="page">任务评估</span>
+        </nav>
+
+        <section class="notice" id="studyNotice" role="note">正在载入固定任务数据…</section>
+
+        <section class="privacy-note">
+            <strong>本地可用性评估，不是业务实验。</strong>
+            固定商品、优惠和计价时点；记录只保存在本浏览器，不会进入采纳率、净省看板或服务端业务历史。请勿输入姓名、电话、账号或其他个人信息。未实际招募参与者前，导出内容只可作为演示记录。
+        </section>
+
+        <section class="setup panel" aria-labelledby="setupTitle">
+            <div class="panel-heading">
+                <div><p class="eyebrow">开始前</p><h2 id="setupTitle">任务设置</h2></div>
+                <span class="local-pill">仅此浏览器</span>
+            </div>
+            <div class="setup-grid">
+                <label>匿名参与者编号<input id="participantId" maxlength="40" autocomplete="off" spellcheck="false"></label>
+                <label>本次任务方式<select id="method"><option value="manual">仅手动判断，不显示推荐</option><option value="assisted">显示智能方案</option></select></label>
+            </div>
+            <p class="field-hint">参与者编号仅作本地记录归组，请由研究员使用随机编码。任务方式需由研究员安排；此工具不会随机分组，也不能单独用于因果 A/B 结论。</p>
+        </section>
+
+        <section class="task-layout">
+            <div class="task-list panel">
+                <div class="panel-heading"><div><p class="eyebrow">两种典型场景</p><h2>选择一个任务</h2></div><span id="recordCount" class="count-pill">0 条记录</span></div>
+                <div id="taskCards" class="task-cards"><div class="loading-card">正在载入…</div></div>
+            </div>
+            <aside class="records panel">
+                <div class="panel-heading"><div><p class="eyebrow">本地数据</p><h2>本机记录</h2></div></div>
+                <div id="recordSummary" class="record-summary">尚无任务记录</div>
+                <div class="record-actions">
+                    <button class="button secondary" id="exportJson" type="button" disabled>导出 JSON</button>
+                    <button class="button secondary" id="exportCsv" type="button" disabled>导出 CSV</button>
+                    <button class="button quiet" id="clearRecords" type="button" disabled>清除记录</button>
+                </div>
+                <p class="field-hint">导出的数据包含匿名编号和任务结果，不包含用户姓名或联系方式。请按研究方案管理文件。</p>
+            </aside>
+        </section>
+
+        <section id="workspace" class="workspace panel" hidden aria-live="polite"></section>
+        <section id="resultForm" class="result-form panel" hidden></section>
+        <section class="past-records panel">
+            <div class="panel-heading"><div><p class="eyebrow">仅本机保存</p><h2>最近完成任务</h2></div></div>
+            <div id="recordTable" class="table-wrap"><p class="empty-state">完成任务后，这里会显示本浏览器保存的记录。</p></div>
+        </section>
+        <footer>研究工具版本 <span id="fixtureVersion">—</span> · 商品与优惠使用冻结示例 · 不创建订单或支付</footer>
+    </main>
+</body>
+</html>

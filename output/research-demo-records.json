@@ -1,0 +1,71 @@
+{
+  "notice": "本地研究记录，仅可用作实际招募参与者后的研究数据；未招募前属于演示数据。",
+  "records": [
+    {
+      "schemaVersion": 1,
+      "recordId": "84b04070-7d47-4315-9ba8-b2d0dfc25e93",
+      "taskVersion": "1",
+      "participantId": "DEMO-QA-20261021",
+      "method": "manual",
+      "taskId": "saving",
+      "taskTitle": "差一点享受满减",
+      "fixedTime": "2026-10-20T07:00:00.000Z",
+      "startedAt": "2026-10-21T13:19:05.674Z",
+      "finishedAt": "2026-10-21T13:24:10.995Z",
+      "elapsedMs": 305321,
+      "interruptions": 0,
+      "decision": "add",
+      "abandonReason": null,
+      "additions": [
+        {
+          "id": "r4",
+          "quantity": 1
+        }
+      ],
+      "estimatedTotal": 32,
+      "estimateError": 0,
+      "wouldBuyWithoutPromotion": "yes",
+      "effort": 2,
+      "baselineTotal": 35,
+      "baselineOrderable": true,
+      "additionCost": 2,
+      "newTotal": 32,
+      "paymentChange": -3,
+      "netSaving": 3,
+      "objectiveMet": true
+    },
+    {
+      "schemaVersion": 1,
+      "recordId": "78087eb3-9093-4160-8d16-76bc7cd38144",
+      "taskVersion": "1",
+      "participantId": "DEMO-QA-20261021",
+      "method": "assisted",
+      "taskId": "minimum-order",
+      "taskTitle": "差一点到起送价",
+      "fixedTime": "2026-10-20T07:00:00.000Z",
+      "startedAt": "2026-10-21T13:26:10.767Z",
+      "finishedAt": "2026-10-21T13:27:09.631Z",
+      "elapsedMs": 58864,
+      "interruptions": 1,
+      "decision": "add",
+      "abandonReason": null,
+      "additions": [
+        {
+          "id": "r3",
+          "quantity": 1
+        }
+      ],
+      "estimatedTotal": 25,
+      "estimateError": 0,
+      "wouldBuyWithoutPromotion": "no",
+      "effort": 1,
+      "baselineTotal": 20,
+      "baselineOrderable": false,
+      "additionCost": 5,
+      "newTotal": 25,
+      "paymentChange": 5,
+      "netSaving": 0,
+      "objectiveMet": true
+    }
+  ]
+}

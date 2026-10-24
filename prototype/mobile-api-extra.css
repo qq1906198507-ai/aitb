@@ -1,0 +1,138 @@
+/* API 联动体验的方案比较、价格明细及可撤销操作。 */
+.api-demo .project-nav {
+    flex-wrap: nowrap;
+    gap: 3px;
+    padding: 7px 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.api-demo .project-nav::-webkit-scrollbar { display: none; }
+.api-demo .project-nav a { flex: none; padding: 6px 8px; white-space: nowrap; }
+.api-demo .status-bar, .api-demo .app-header, .api-demo .api-status { flex-shrink: 0; }
+.api-demo .app-content { min-height: 0; overscroll-behavior: contain; }
+.api-demo .api-status { margin-top: 7px; margin-bottom: 7px; overflow-wrap: anywhere; }
+.api-demo .header-left { min-width: 0; }
+.api-demo .shop-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.api-demo .demo-guide { margin-top: 10px; }
+.api-demo .hint-content { min-width: 0; }
+.api-demo .hint-text { overflow-wrap: anywhere; }
+.api-demo .hint-action { flex: none; white-space: nowrap; }
+.api-demo .section-title { gap: 10px; align-items: center; }
+.api-demo .section-title h2 { min-width: 0; }
+.scenario-actions { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.order-status { margin: 0 16px 12px; padding: 10px 12px; border: 1px solid #bbf7d0; border-radius: 9px; background: #f0fdf4; color: #166534; font-size: 12px; line-height: 1.7; }
+.order-status.unmet { border-color: #fde68a; background: #fffbeb; color: #92400e; }
+.order-status strong, .order-status small { display: block; }
+.order-status small { font-size: 11px; }
+.preferences-panel { margin: 0 16px 14px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
+.preferences-panel summary { padding: 12px; color: #334155; cursor: pointer; font-size: 12px; font-weight: 600; line-height: 1.7; }
+.preferences-panel form { padding: 0 12px 12px; }
+.preferences-panel fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.preference-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.preferences-panel label { font-size: 11px; line-height: 1.7; color: #475569; min-width: 0; }
+.preferences-panel input[type=number], .preferences-panel select { display: block; width: 100%; box-sizing: border-box; min-width: 0; margin-top: 4px; border: 1px solid #cbd5e1; border-radius: 7px; padding: 8px; font: inherit; font-size: 12px; color: #0f172a; background: #fff; }
+.strategy-label { display: block; margin-top: 10px; }
+.preference-caption { margin-top: 12px; color: #475569; font-size: 11px; }
+.excluded-products { display: flex; flex-wrap: wrap; gap: 7px 12px; margin: 7px 0; }
+.excluded-products label { display: inline-flex; align-items: center; gap: 5px; }
+.excluded-products input { accent-color: #2563eb; }
+.preference-help { color: #64748b; font-size: 10px; line-height: 1.7; margin: 8px 0; }
+.apply-preferences { border: 1px solid #bfdbfe; border-radius: 7px; padding: 8px 10px; color: #1d4ed8; background: #eff6ff; font: inherit; font-size: 11px; cursor: pointer; }
+.preferences-error { color: #b91c1c; font-size: 11px; line-height: 1.6; }
+.preferences-error:not(:empty) { margin-top: 8px; }
+.plan-card.minimum-plan .plan-saving { color: #92400e; }
+.plan-card.minimum-plan.selected { border-color: #fbbf24; background: #fffbeb; }
+.plan-card .plan-saving { flex-shrink: 0; white-space: nowrap; }
+.plan-card .plan-row + .plan-row { margin-top: 5px; }
+.section-kicker { color: #64748b; font-size: 10px; line-height: 1.5; text-align: right; max-width: 112px; }
+
+.price-details { margin: 0 16px 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+.price-details summary, .performance-details summary {
+    cursor: pointer; padding: 13px 14px; font-size: 13px; line-height: 1.5; font-weight: 600; color: #334155;
+}
+.price-details summary::marker, .performance-details summary::marker { color: #2563eb; }
+.price-details[open] summary { border-bottom: 1px solid #edf2f7; }
+.price-details-body { padding: 8px 14px 14px; }
+.breakdown-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 6px 0; font-size: 12px; line-height: 1.6; color: #64748b; }
+.breakdown-row > :first-child { min-width: 0; overflow-wrap: anywhere; }
+.breakdown-row > :last-child { flex-shrink: 0; color: #334155; font-variant-numeric: tabular-nums; text-align: right; }
+.breakdown-row.is-total { margin-top: 5px; padding-top: 11px; border-top: 1px dashed #e2e8f0; font-weight: 700; }
+.breakdown-row.is-total > :last-child { color: #1d4ed8; font-size: 15px; }
+.breakdown-row.is-discount > :last-child { color: #047857; }
+.promotion-rules:not(:empty) { border-top: 1px solid #edf2f7; margin-top: 10px; padding-top: 10px; color: #64748b; font-size: 11px; line-height: 1.8; overflow-wrap: anywhere; }
+.rule-list { padding-left: 16px; margin: 4px 0 0; }
+.rule-chip { display: inline-block; padding: 2px 7px; margin: 3px 3px 0 0; background: #f1f5f9; border-radius: 5px; color: #475569; }
+.section-empty { padding: 9px 0; color: #64748b; font-size: 12px; line-height: 1.7; }
+
+.undo-bar { margin: 0 16px 14px; padding: 12px; border: 1px solid #a7f3d0; border-radius: 12px; background: #f0fdf4; }
+.undo-content strong { display: block; color: #065f46; font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.undo-content p { margin-top: 3px; color: #4b6b5c; font-size: 11px; line-height: 1.7; }
+.undo-btn { margin-top: 9px; padding: 7px 10px; border: 1px solid #86d5b5; border-radius: 7px; background: #fff; color: #047857; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.undo-btn:hover:enabled { background: #ecfdf5; }
+.undo-status { color: #476451; font-size: 11px; line-height: 1.7; }
+.undo-status:not(:empty) { margin-top: 7px; }
+.undo-status.error { color: #b91c1c; }
+
+.plans-section { padding: 0 16px 16px; }
+.plans-section > .section-title { margin-bottom: 3px; }
+.plans-status { margin: 5px 0 12px; font-size: 11px; line-height: 1.7; color: #64748b; }
+.plans-status.error { color: #b91c1c; }
+.alternative-plans { display: grid; gap: 9px; }
+.plan-card {
+    display: block; width: 100%; position: relative; padding: 13px; border: 1px solid #dfe7f1;
+    border-radius: 11px; background: #fff; color: #334155; font: inherit; text-align: left; line-height: 1.6;
+}
+button.plan-card { cursor: pointer; }
+.plan-card:hover:enabled { border-color: #93b6f6; background: #f8fbff; }
+.plan-card.selected, .plan-card.best, .plan-card[aria-pressed="true"] { border-color: #93b6f6; background: #f0f6ff; }
+.plan-card:focus-visible, .plan-choice-btn:focus-visible, .undo-btn:focus-visible, .api-demo button:focus-visible, .api-demo summary:focus-visible {
+    outline: 3px solid #93c5fd; outline-offset: 3px;
+}
+.plan-name { color: #0f172a; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.plan-saving { color: #047857; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.plan-cost, .plan-total { font-size: 11px; color: #64748b; line-height: 1.7; }
+.plan-total strong { color: #1d4ed8; font-weight: 700; }
+.plan-badge { display: inline-block; color: #1d4ed8; background: #dbeafe; padding: 1px 6px; border-radius: 5px; font-size: 10px; font-weight: 600; margin-right: 5px; }
+.plan-card .plan-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.plan-card .plan-actions { margin-top: 7px; color: #1d4ed8; font-size: 11px; }
+.api-demo button.recommend-item { min-width: 0; border-radius: 11px; padding-top: 14px; line-height: 1.5; }
+.api-demo .recommend-name { overflow-wrap: anywhere; }
+.api-demo .save-badge { max-width: calc(100% - 12px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.api-demo .modal-content { max-width: 390px; width: min(92vw, 390px); }
+.api-demo .modal-body { overscroll-behavior: contain; scrollbar-gutter: stable; }
+.api-demo .suggestion-title, .api-demo .suggestion-detail, .api-demo .calc-step, .api-demo .calc-result { overflow-wrap: anywhere; }
+.api-demo .suggestion-card { padding: 14px; }
+.plan-choice { display: flex; flex-wrap: wrap; gap: 7px; }
+.plan-choice:empty { display: none; }
+.plan-choice button, .plan-choice-btn {
+    padding: 7px 9px; border: 1px solid #dbe3ef; border-radius: 7px; background: #fff;
+    color: #475569; font: inherit; font-size: 11px; line-height: 1.5; cursor: pointer; text-align: left; overflow-wrap: anywhere;
+}
+.plan-choice button.selected, .plan-choice button[aria-pressed="true"], .plan-choice-btn.selected {
+    border-color: #93b6f6; color: #1d4ed8; background: #eff6ff;
+}
+.quote-expiry { margin: 9px 0 13px; color: #64748b; font-size: 11px; line-height: 1.6; font-variant-numeric: tabular-nums; }
+.quote-expiry.expired, .quote-expiry.error { color: #b91c1c; }
+.performance-details { padding: 0; border: 1px solid #e2e8f0; background: #f8fafc; }
+.performance-details summary { padding: 10px 12px; font-size: 12px; color: #64748b; }
+.performance-detail-body { padding: 0 12px 9px; }
+.api-demo .metric-row { gap: 12px; }
+.api-demo .metric-value { text-align: right; overflow-wrap: anywhere; }
+.api-demo .action-buttons { position: sticky; bottom: 0; padding: 12px 0 15px; background: #fff; margin-top: 6px; }
+.api-demo .action-buttons button { min-height: 44px; }
+.api-demo .modal-status { padding: 0 2px; overflow-wrap: anywhere; }
+.api-demo .modal-status.error { padding: 9px 10px; background: #fef2f2; border-radius: 7px; }
+
+@media (max-width: 360px) {
+    .api-demo .project-nav { padding-left: 7px; padding-right: 7px; gap: 1px; }
+    .api-demo .project-nav a { padding-left: 7px; padding-right: 7px; font-size: 11px; }
+    .api-demo .shop-name { font-size: 14px; }
+    .plans-section { padding-left: 12px; padding-right: 12px; }
+    .price-details, .undo-bar { margin-left: 12px; margin-right: 12px; }
+    .section-kicker { max-width: 100px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .api-demo .modal-content { animation: none; }
+    .api-demo .toast { transition: none; }
+}

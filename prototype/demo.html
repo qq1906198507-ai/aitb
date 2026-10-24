@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>演示中心 · 刚好净省凑单</title>
+    <style>
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
+        body { margin: 0; display: flex; flex-direction: column; background: #f1f5f9; font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+        .hub-top { flex-shrink: 0; background: #fff; border-bottom: 1px solid #e2e8f0; }
+        .hub-brand { display: flex; align-items: baseline; gap: 8px; padding: 10px 14px 0; flex-wrap: wrap; }
+        .hub-brand strong { font-size: 14px; color: #0f172a; }
+        .hub-brand span { font-size: 11px; color: #94a3b8; }
+        .hub-tabs { display: flex; gap: 4px; padding: 6px 10px 8px; overflow-x: auto; scrollbar-width: none; }
+        .hub-tabs::-webkit-scrollbar { display: none; }
+        .hub-tabs button { flex-shrink: 0; border: 0; background: transparent; padding: 9px 14px; margin: 0; border-radius: 8px; font-size: 13px; color: #475569; cursor: pointer; line-height: 1.4; font-family: inherit; }
+        .hub-tabs button:hover, .hub-tabs button:focus-visible { color: #1d4ed8; background: #eff6ff; }
+        .hub-tabs button[aria-selected="true"] { color: #1d4ed8; background: #eff6ff; font-weight: 600; }
+        .hub-tabs button .hub-key { display: inline-block; margin-left: 4px; font-size: 10px; color: #94a3b8; font-weight: 400; }
+        .hub-alert { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 14px; background: #fffbeb; border-top: 1px solid #fde68a; color: #92400e; font-size: 12px; line-height: 1.6; }
+        .hub-alert button { border: 1px solid #fcd34d; background: #fff; color: #92400e; border-radius: 7px; padding: 5px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+        .hub-alert button:hover { background: #fef3c7; }
+        .hub-views { flex: 1; position: relative; min-height: 0; }
+        .hub-views iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; display: none; }
+        .hub-views iframe.active { display: block; }
+        .hub-fab { position: fixed; right: 14px; bottom: 14px; z-index: 20; border: 1px solid #c7d7f8; background: #fff; color: #1d4ed8; border-radius: 999px; padding: 9px 14px; font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 6px 20px rgba(29, 48, 80, .18); font-family: inherit; }
+        .hub-fab:hover, .hub-fab:focus-visible { background: #eff6ff; }
+        .hub-steps { position: fixed; right: 14px; bottom: 60px; z-index: 20; width: min(350px, calc(100vw - 28px)); max-height: min(70vh, 460px); overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 16px 40px rgba(15, 23, 42, .18); padding: 14px 16px; font-size: 12px; color: #334155; line-height: 1.75; }
+        .hub-steps h2 { font-size: 13px; margin: 0 0 8px; color: #0f172a; }
+        .hub-steps ol { margin: 0; padding-left: 18px; }
+        .hub-steps li { margin-bottom: 6px; }
+        .hub-steps li:last-child { margin-bottom: 0; }
+        .hub-steps .jump { border: 0; background: none; color: #1d4ed8; cursor: pointer; padding: 0; font: inherit; text-decoration: underline; }
+        .hub-steps .jump:hover { color: #1e40af; }
+        .hub-steps .close-row { margin-top: 10px; text-align: right; }
+        .hub-steps .close { border: 1px solid #e2e8f0; background: #fff; color: #475569; border-radius: 7px; padding: 4px 10px; font: inherit; font-size: 11px; cursor: pointer; }
+        .hub-steps .close:hover { background: #f8fafc; }
+        @media (min-width: 1100px) {
+            .hub-views.split .pane { display: block; }
+            .hub-views.split .pane-left { left: 0; width: 50%; border-right: 1px solid #e2e8f0; }
+            .hub-views.split .pane-right { left: 50%; width: 50%; }
+        }
+        @media (max-width: 640px) {
+            .hub-brand { display: none; }
+            .hub-tabs { padding: 8px 10px; }
+            .hub-tabs button .hub-key { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="hub-top">
+        <div class="hub-brand"><strong>刚好·净省凑单 · 演示中心</strong><span>本机 3000 服务 · 切换不刷新；宽屏时「联动体验 + 数据看板」自动并排，数字键 1–6 切换</span></div>
+        <nav class="hub-tabs" id="tabs" aria-label="演示页面切换"></nav>
+        <div class="hub-alert" id="hubAlert" hidden role="alert">
+            <span>⚠️ 本机服务未连接。请在 prototype 目录双击 start-demo.bat 启动后，再点「重试」。</span>
+            <button type="button" id="retryBtn">重试</button>
+        </div>
+    </div>
+    <main class="hub-views" id="views"></main>
+    <button type="button" class="hub-fab" id="stepsToggle" aria-expanded="false" aria-controls="stepsPanel">📋 演示步骤</button>
+    <section class="hub-steps" id="stepsPanel" hidden aria-label="演示步骤速查">
+        <h2>演示流程速查</h2>
+        <ol>
+            <li>在 <button type="button" class="jump" data-jump="api">联动体验</button> 点「满减净省示例」，比较方案并核对 ¥35 → ¥32（净省 ¥3）；切到 <button type="button" class="jump" data-jump="dashboard">数据看板</button>，有效采纳 +1、累计净省 +3。</li>
+            <li>调整加购件数、商品预算、排除项与「支出更低／件数更少」排序，观察约束对方案的影响；0 件表示不加购。</li>
+            <li>在联动体验点「起送补单示例」（原车 ¥20，低于 ¥25 起送价）：采纳后有效采纳数 +1，累计净省保持不变。</li>
+            <li>撤销刚才的采纳：购物车恢复、分类计数扣回、原记录保留；<button type="button" class="jump" data-jump="history">历史记录</button> 可按类型筛选。</li>
+            <li>再次打开方案选「不加购」记一次忽略，最后在看板导出 JSON/CSV；需要从零开始时用看板的「清空演示数据」。</li>
+        </ol>
+        <div class="close-row"><button type="button" class="close" id="stepsClose">收起</button></div>
+    </section>
+    <script>
+        const VIEWS = [
+            { id: 'api', label: '联动体验', src: 'mobile-api.html' },
+            { id: 'dashboard', label: '数据看板', src: 'dashboard.html' },
+            { id: 'history', label: '历史记录', src: 'history.html' },
+            { id: 'research', label: '任务评估', src: 'research.html' },
+            { id: 'pc', label: 'PC 版', src: 'index.html' },
+            { id: 'static', label: '静态移动端', src: 'mobile.html' }
+        ];
+        const SPLIT_IDS = new Set(['api', 'dashboard']);
+        const tabs = document.getElementById('tabs');
+        const views = document.getElementById('views');
+        const alertBox = document.getElementById('hubAlert');
+        const frames = new Map();
+        let activeId = 'api';
+        const wideScreen = matchMedia('(min-width: 1100px)');
+
+        function injectHubStyle(frame) {
+            // 子页面自带旧导航，嵌入演示中心后隐藏，避免出现双导航
+            try {
+                const doc = frame.contentDocument;
+                if (!doc || !doc.head) return;
+                const style = doc.createElement('style');
+                style.textContent = '.project-nav,.page-nav,.study-nav,.static-notice{display:none!important}';
+                doc.head.appendChild(style);
+            } catch (_) { /* 无法访问时保持页面原样 */ }
+        }
+
+        function ensureFrame(view) {
+            if (frames.has(view.id)) return frames.get(view.id);
+            const frame = document.createElement('iframe');
+            frame.title = view.label;
+            frame.src = view.src;
+            frame.addEventListener('load', () => {
+                injectHubStyle(frame);
+                remapNavigatedFrame(frame, view);
+            });
+            views.appendChild(frame);
+            frames.set(view.id, frame);
+            return frame;
+        }
+
+        function remapNavigatedFrame(frame, originView) {
+            // 子页面自带的旧导航会把 iframe 带到另一个演示页面；归位到对应标签
+            try {
+                const page = frame.contentWindow.location.pathname.split('/').pop();
+                const target = VIEWS.find(item => item.src === page);
+                if (!target || target.id === originView.id || frames.get(originView.id) !== frame) return;
+                frames.delete(originView.id);
+                frame.remove();
+                activate(target.id, true);
+            } catch (_) { /* 未就绪时保持原样 */ }
+        }
+
+        function nudgeFrame(frame) {
+            // iframe 常驻后不会重新加载；显示前推动一次刷新，页面可用刷新钩子或可见性监听
+            try {
+                const win = frame.contentWindow;
+                if (typeof win.__hubRefresh === 'function') { win.__hubRefresh(); return; }
+                win.document.dispatchEvent(new Event('visibilitychange'));
+            } catch (_) { /* 尚未加载完成时忽略 */ }
+        }
+
+        function render() {
+            const split = wideScreen.matches && SPLIT_IDS.has(activeId);
+            views.classList.toggle('split', split);
+            if (split) { ensureFrame(VIEWS[0]); ensureFrame(VIEWS[1]); }
+            for (const [key, frame] of frames) {
+                frame.className = split
+                    ? (key === 'api' ? 'pane pane-left active'
+                        : key === 'dashboard' ? 'pane pane-right active' : '')
+                    : (key === activeId ? 'active' : '');
+            }
+            for (const button of tabs.children) {
+                const selected = split ? SPLIT_IDS.has(button.dataset.view) : button.dataset.view === activeId;
+                button.setAttribute('aria-selected', selected ? 'true' : 'false');
+                button.tabIndex = selected ? 0 : -1;
+            }
+            document.title = (split ? '联动体验 + 数据看板'
+                : VIEWS.find(item => item.id === activeId).label) + ' · 演示中心 · 刚好净省凑单';
+        }
+
+        function activate(id, updateHash) {
+            const view = VIEWS.find(item => item.id === id);
+            if (!view) return;
+            const created = !frames.has(view.id);
+            activeId = view.id;
+            const frame = ensureFrame(view);
+            render();
+            if (!created) nudgeFrame(frame);
+            checkHealth();
+            try { sessionStorage.setItem('demo-hub-view', view.id); } catch (_) { /* 无存储时忽略 */ }
+            if (updateHash) history.replaceState(null, '', '#' + view.id);
+        }
+
+        for (const [index, view] of VIEWS.entries()) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.view = view.id;
+            button.innerHTML = `${view.label}<span class="hub-key" aria-hidden="true">${index + 1}</span>`;
+            button.addEventListener('click', () => activate(view.id, true));
+            tabs.appendChild(button);
+        }
+
+        document.addEventListener('keydown', event => {
+            if (event.metaKey || event.ctrlKey || event.altKey) return;
+            const tag = document.activeElement ? document.activeElement.tagName : '';
+            if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag)) return;
+            const index = '123456'.indexOf(event.key);
+            if (index >= 0) activate(VIEWS[index].id, true);
+        });
+
+        wideScreen.addEventListener('change', render);
+        // 部分内嵌环境调整尺寸时不派发媒体查询 change 事件，resize 兜底
+        window.addEventListener('resize', render);
+
+        // 服务可用性：未启动时显示横幅；恢复后重载已创建的页面，去掉错误页
+        let serverDown = true;
+        function showAlert(message) {
+            alertBox.firstElementChild.textContent = message;
+            alertBox.hidden = false;
+        }
+        async function checkHealth() {
+            if (location.protocol === 'file:') {
+                serverDown = true;
+                showAlert('⚠️ 当前是直接双击打开的文件，后端接口不可用。请启动本机服务（双击 start-demo.bat）后访问 http://127.0.0.1:3000/');
+                return;
+            }
+            try {
+                const response = await fetch('/health', { cache: 'no-store' });
+                if (!response.ok) throw new Error(String(response.status));
+                if (serverDown) {
+                    for (const frame of frames.values()) {
+                        if (frame.src) frame.src = frame.src;
+                    }
+                }
+                serverDown = false;
+                alertBox.hidden = true;
+            } catch (_) {
+                serverDown = true;
+                showAlert('⚠️ 本机服务未连接。请在 prototype 目录双击 start-demo.bat 启动后，再点「重试」。');
+            }
+        }
+        document.getElementById('retryBtn').addEventListener('click', checkHealth);
+        // 部分内嵌环境会节流定时器：断连期间任何交互或聚焦都立即复查，恢复后横幅自动消失
+        document.addEventListener('pointerdown', () => { if (serverDown) checkHealth(); });
+        window.addEventListener('focus', () => { if (serverDown) checkHealth(); });
+        setInterval(checkHealth, 5000);
+        checkHealth();
+
+        const stepsPanel = document.getElementById('stepsPanel');
+        const stepsToggle = document.getElementById('stepsToggle');
+        function hideSteps() {
+            stepsPanel.hidden = true;
+            stepsToggle.setAttribute('aria-expanded', 'false');
+        }
+        stepsToggle.addEventListener('click', () => {
+            const show = stepsPanel.hidden;
+            stepsPanel.hidden = !show;
+            stepsToggle.setAttribute('aria-expanded', show ? 'true' : 'false');
+        });
+        document.getElementById('stepsClose').addEventListener('click', hideSteps);
+        for (const button of stepsPanel.querySelectorAll('[data-jump]')) {
+            button.addEventListener('click', () => {
+                activate(button.dataset.jump, true);
+                hideSteps();
+            });
+        }
+
+        let initial = null;
+        if (location.hash && VIEWS.some(view => '#' + view.id === location.hash)) initial = location.hash.slice(1);
+        if (!initial) { try { initial = sessionStorage.getItem('demo-hub-view'); } catch (_) { /* 忽略 */ } }
+        activate(VIEWS.some(view => view.id === initial) ? initial : 'api', false);
+    </script>
+</body>
+</html>

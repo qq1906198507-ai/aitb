@@ -1,0 +1,7 @@
+.project-nav { display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 14px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+.project-nav a { padding: 5px 9px; border-radius: 6px; color: #475569; font-size: 12px; text-decoration: none; line-height: 1.4; }
+.project-nav a:hover, .project-nav a:focus-visible { color: #1d4ed8; background: #eff6ff; }
+.project-nav a[aria-current="page"] { color: #1d4ed8; background: #eff6ff; font-weight: 600; }
+.static-notice { margin: 10px 16px; font-size: 12px; color: #64748b; line-height: 1.6; }
+.static-notice a { color: #1d4ed8; }
+a.back-btn { text-decoration: none; }

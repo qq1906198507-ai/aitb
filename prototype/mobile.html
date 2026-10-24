@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刚好·净省凑单 - 移动端原型</title>
+    <link rel="stylesheet" href="mobile-styles.css">
+    <link rel="stylesheet" href="demo-nav.css">
+</head>
+<body>
+    <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+            <!-- 状态栏 -->
+            <div class="status-bar">
+                <span class="time">14:30</span>
+                <div class="status-icons">
+                    <span>📶</span>
+                    <span>🔋</span>
+                </div>
+            </div>
+
+            <!-- 应用头部 -->
+            <header class="app-header">
+                <div class="header-left">
+                    <span class="back-btn">←</span>
+                    <span class="shop-name">美味外卖·中关村店</span>
+                </div>
+                <div class="header-right">
+                    <span class="cart-icon">🛒</span>
+                </div>
+            </header>
+            <nav class="project-nav" aria-label="项目页面">
+                <a href="demo.html">演示中心</a><a href="mobile-api.html">联动体验</a><a href="dashboard.html">数据看板</a><a href="history.html">操作记录</a>
+                <a href="research.html">任务评估</a>
+                <a href="index.html">PC版</a><a href="mobile.html" aria-current="page">静态版</a>
+            </nav>
+            <p class="static-notice">静态演示 · 本页操作不计入看板，组合凑单请进入联动体验。</p>
+
+            <!-- 主内容区 -->
+            <main class="app-content">
+                <!-- 进度提示条 -->
+                <div class="progress-hint" id="progressHint">
+                    <div class="hint-content">
+                        <span class="hint-icon">💰</span>
+                        <span class="hint-text" id="hintText">再加¥2.00可省¥5.00</span>
+                    </div>
+                    <button class="hint-action" id="hintAction">查看建议</button>
+                </div>
+
+                <!-- 购物车商品列表 -->
+                <section class="cart-section">
+                    <div class="section-title">
+                        <h2>已选商品</h2>
+                        <span class="item-count" id="itemCount">3件</span>
+                    </div>
+                    <div class="cart-list" id="cartList">
+                        <!-- 动态生成 -->
+                    </div>
+                </section>
+
+                <!-- 凑单推荐 -->
+                <section class="recommend-section">
+                    <div class="section-title">
+                        <h2>🎯 凑单推荐</h2>
+                        <span class="recommend-hint">净省好物</span>
+                    </div>
+                    <div class="recommend-list" id="recommendList">
+                        <!-- 动态生成 -->
+                    </div>
+                </section>
+
+                <!-- 算法说明 -->
+                <section class="algorithm-info">
+                    <div class="info-header" id="infoHeader">
+                        <span class="info-icon">🧮</span>
+                        <span class="info-title">净省算法说明</span>
+                        <span class="info-arrow">▼</span>
+                    </div>
+                    <div class="info-content" id="infoContent" style="display: none;">
+                        <div class="info-item">
+                            <strong>核心公式：</strong>净省 = 增量优惠 − 加购价 − 附加费
+                        </div>
+                        <div class="info-item">
+                            <strong>计算流程：</strong>规则引擎(15ms) → 候选剪枝(25ms) → 求解器(35ms) → 解释生成(15ms)
+                        </div>
+                        <div class="info-item">
+                            <strong>性能指标：</strong>P99延迟 < 100ms，准确率 > 98%
+                        </div>
+                        <div class="info-item">
+                            <strong>数据飞轮：</strong>用户采纳 → 样本积累 → 模型优化 → 推荐更准
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- 底部结算栏 -->
+            <footer class="checkout-bar">
+                <div class="price-info">
+                    <div class="price-row">
+                        <span class="label">商品：</span>
+                        <span class="value" id="subtotal">¥48.00</span>
+                    </div>
+                    <div class="price-row">
+                        <span class="label">优惠：</span>
+                        <span class="value discount" id="discount">-¥10.00</span>
+                    </div>
+                    <div class="price-row total">
+                        <span class="label">实付：</span>
+                        <span class="value" id="total">¥38.00</span>
+                    </div>
+                </div>
+                <button class="checkout-btn" id="checkoutBtn">去结算</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- 净省建议弹窗 -->
+    <div class="modal" id="netsaveModal" style="display: none;">
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💰 净省建议</h3>
+                <button class="modal-close" id="modalClose">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="suggestion-card">
+                    <div class="suggestion-title" id="suggestionTitle"></div>
+                    <div class="suggestion-detail" id="suggestionDetail"></div>
+                </div>
+                
+                <div class="calculation-process">
+                    <h4>计算过程</h4>
+                    <div class="calc-step" id="calcStep1"></div>
+                    <div class="calc-step" id="calcStep2"></div>
+                    <div class="calc-step" id="calcStep3"></div>
+                    <div class="calc-result" id="calcResult"></div>
+                </div>
+
+                <div class="performance-metrics">
+                    <h4>算法性能</h4>
+                    <div class="metric-row">
+                        <span class="metric-label">计算耗时</span>
+                        <span class="metric-value" id="calcTime">--</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">候选商品</span>
+                        <span class="metric-value" id="candidateCount">--</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">最优净省</span>
+                        <span class="metric-value highlight" id="bestSaving">--</span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-secondary" id="rejectBtn">不加购</button>
+                    <button class="btn-primary" id="acceptBtn">采纳建议</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="algorithm.js"></script>
+    <script src="mobile-app.js"></script>
+</body>
+</html>
