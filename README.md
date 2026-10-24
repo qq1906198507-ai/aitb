@@ -1,5 +1,7 @@
 # 刚好 · 净省凑单
 
+[![CI](https://github.com/qq1906198507-ai/aitb/actions/workflows/ci.yml/badge.svg)](https://github.com/qq1906198507-ai/aitb/actions/workflows/ci.yml)
+
 普陀创新挑战赛「AI 智能省钱场景，帮助用户更合理地充分使用平台优惠」参赛项目。针对外卖结算时「差一点到起送价」「差一点享受满减」的凑单决策问题，提供带约束的实时净省计算服务与可现场运行的产品原型。
 
 **不劝你多买，只帮你少花。**
