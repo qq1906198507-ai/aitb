@@ -20,7 +20,7 @@ const integerArg = (key, fallback, min, max) => {
 const seed = integerArg('--seed', 20261020, 0, 0xffffffff);
 const randomCases = integerArg('--cases', 240, 1, 5000);
 const perfSamples = integerArg('--perf-samples', 40, 5, 300);
-const outputFile = path.resolve(args.get('--output') || path.join(__dirname, 'results', 'v13-benchmark.json'));
+const outputFile = path.resolve(args.get('--output') || path.join(__dirname, 'results', 'v14-benchmark.json'));
 const reportFile = path.resolve(__dirname, '..', '..', 'docs', 'EXPERIMENT_REPORT.md');
 let randomState = seed;
 function random() { randomState = (Math.imul(randomState, 1664525) + 1013904223) >>> 0; return randomState / 0x100000000; }
@@ -266,7 +266,7 @@ function aggregate(mode, method) {
 
 function quantile(values, q) { const sorted = values.slice().sort((a, b) => a - b); return sorted[Math.max(0, Math.ceil(q * sorted.length) - 1)]; }
 const timings = [];
-for (const size of [5, 10, 20]) {
+for (const size of [5, 10, 20, 50]) {
     const perfCase = scenario(`performance-${size}`, cart(47), Array.from({ length: size }, (_, i) => product(`p${i}`, 0.5 + (i % 7) * 0.25, 4)),
         { minimumOrder: 25, fullReduction: [{ threshold: 50, discount: 10 }, { threshold: 55, discount: 14 }], coupons: [{ threshold: 40, discount: 3, stackable: true }] });
     const engine = new Engine({ promotions: perfCase.promotions, now: () => FIXED_NOW });
@@ -302,11 +302,11 @@ fs.writeFileSync(outputFile, JSON.stringify(result, null, 2) + '\n', 'utf8');
 
 const percent = (value) => value === null ? '—' : `${(value * 100).toFixed(1)}%`;
 const number = (value, digits = 2) => value === null ? '—' : value.toFixed(digits);
-const labels = { 'no-add': '不加购', single: '单件择优', greedy: '最低单价前缀贪心', engine: 'v1.3 约束枚举' };
+const labels = { 'no-add': '不加购', single: '单件择优', greedy: '最低单价前缀贪心', engine: 'v1.4 约束枚举' };
 const modeTable = (mode) => Object.entries(summary.byMode[mode]).map(([method, row]) => `| ${labels[method]} | ${row.oracleFeasible} | ${row.selected} / ${percent(row.feasibleCoverage)} | ${row.objectiveHits} | ${number(row.meanSavedAllScenarios)} | ${number(row.meanAddedUnitsSelected)} | ${number(row.meanAdditionCostSelected)} | ${number(row.meanPaymentChangeSelected)} |`).join('\n');
 const failures = results.filter((row) => !row.objectiveMatch || row.violations.length);
 const failureText = failures.length ? failures.slice(0, 12).map((row) => `- ${row.name}：目标匹配=${row.objectiveMatch}；${row.violations.join('；') || '目标函数不一致'}`).join('\n') : '本次场景中未发现目标不一致、金额不一致或约束违规。';
-const report = `# 智能凑单 v1.3 可复现实验报告
+const report = `# 智能凑单 v1.4 可复现实验报告
 
 本报告由 \`backend/experiments/run-benchmark.js\` 自动生成。生成时间（UTC）：${result.generatedAt}。所有业务计价固定在北京时间 2026-10-20 12:00:00，避免闪购和券到期使结果随运行时间变化。
 
@@ -322,7 +322,7 @@ const report = `# 智能凑单 v1.3 可复现实验报告
 node experiments/run-benchmark.js --seed ${seed} --cases ${randomCases} --perf-samples ${perfSamples}
 \`\`\`
 
-结果：\`backend/experiments/results/v13-benchmark.json\`，包含输入、独立最优方案、各基线、违规项、原始耗时和源码 SHA-256。可用 \`--output\` 改 JSON 路径。脚本仅加载引擎，不启动服务，不读取或修改 \`storage/events.json\`。
+结果：\`backend/experiments/results/v14-benchmark.json\`，包含输入、独立最优方案、各基线、违规项、原始耗时和源码 SHA-256。可用 \`--output\` 改 JSON 路径。脚本仅加载引擎，不启动服务，不读取或修改 \`storage/events.json\`。
 
 ## 场景与独立校验
 
@@ -368,7 +368,7 @@ ${timings.map((row) => `| ${row.candidates} | ${row.evaluatedMin}–${row.evalua
 
 ## 局限与下一步
 
-本次最优性只针对给定候选、最多四件、原购物车不变以及当前简化优惠规则。性能仅测试 5、10、20 个候选，未覆盖 API 商品数组的 50 项上限。未包含跨店、复杂优惠互斥组、满减与券的多种门槛口径、真实库存预留和账户资格，也未测多用户并发、网络或长期运行。固定种子场景集有助复现，不代表真实商品/优惠分布。下一步应补独立真实规则样例、平台对账数据与用户任务实验，并按起送和净省两类目的分别评估。
+本次最优性只针对给定候选、最多四件、原购物车不变以及当前简化优惠规则。性能覆盖 5、10、20、50 个候选，已达 API 商品数组的 50 项上限；50 候选的全量穷举在本机约为 1–2 秒每次同步计算（见上表），真实目录规模需候选剪枝或降级策略，生产环境延迟需另行评估。未包含跨店、复杂优惠互斥组、满减与券的多种门槛口径、真实库存预留和账户资格，也未测多用户并发、网络或长期运行。固定种子场景集有助复现，不代表真实商品/优惠分布。v1.4 新增的偏好加权重排（算法模型第 5.1 节）是展示层启发式，不改变方案集合与金额，不在本合成实验范围内，其行为由 API 集成测试覆盖；本报告不声称该重排提升采纳率、转化或用户收益。下一步应补独立真实规则样例、平台对账数据与用户任务实验，并按起送和净省两类目的分别评估。
 `;
 fs.writeFileSync(reportFile, report.replace(/\\“/g, '“').replace(/\\”/g, '”'), 'utf8');
 console.log(JSON.stringify({ summary, performance: timings.map(({ rawMs, ...row }) => row), outputFile, reportFile }, null, 2));

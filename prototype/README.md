@@ -121,7 +121,7 @@ node experiments/run-benchmark.js
 
 `npm test` 保留引擎、联动前端、历史／看板回归和 API 集成测试。覆盖金额与库存、组合搜索、偏好约束、起送分支、过期校价、采纳撤销、事件幂等、历史筛选分页、旧记录兼容及持久化错误，也覆盖研究任务恢复、计时、复算重试、记录幂等与导出。2026-10-24 v1.4 运行 64 项测试和 26 组 API 集成全部通过，含偏好加权重排（采纳两次饮品方案后「符合我的偏好」将饮品方案排到首位，其他策略保持净省最多优先）与演示数据清零。接口测试使用临时目录和随机端口，不改动本地演示历史。v1.3 的浏览器实测与演示导出见[任务评估验收记录](../output/任务评估验收_v1.3_20261021.md)。
 
-[基准脚本](backend/experiments/run-benchmark.js) 使用固定随机种子、专项边界和独立计价／数量向量穷举参照，分别检查净省与起送场景，并比较不加购、单件及低价前缀贪心策略。参数支持 `--seed N --cases N --perf-samples N`，JSON 输出至 `backend/experiments/results/v13-benchmark.json`，生成 [实验报告](docs/EXPERIMENT_REPORT.md)。报告中的一致性只针对合成场景和已实现规则；耗时受机器与样本影响，不等同于真实用户收益、平台效果或生产服务等级。
+[基准脚本](backend/experiments/run-benchmark.js) 使用固定随机种子、专项边界和独立计价／数量向量穷举参照，分别检查净省与起送场景，并比较不加购、单件及低价前缀贪心策略。参数支持 `--seed N --cases N --perf-samples N`，JSON 输出至 `backend/experiments/results/v14-benchmark.json`，生成 [实验报告](docs/EXPERIMENT_REPORT.md)。性能覆盖 5–50 个候选（50 项为 API 上限，本机单次同步计算约 1–2 秒）。报告中的一致性只针对合成场景和已实现规则；耗时受机器与样本影响，不等同于真实用户收益、平台效果或生产服务等级。
 
 ## 主要文件与后续方向
 
