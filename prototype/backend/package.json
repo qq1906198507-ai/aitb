@@ -1,6 +1,6 @@
 {
   "name": "netsave-engine",
-    "version": "1.4.0",
+    "version": "1.5.0",
   "description": "刚好·净省凑单 - 后端计算服务",
   "main": "server.js",
   "scripts": {

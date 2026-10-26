@@ -8,6 +8,7 @@ const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'netsave-api-'));
 process.env.NETSAVE_DATA_DIR = path.join(temporaryRoot, 'default');
 const { createApp } = require('./server');
 const { DemoStore } = require('./store');
+const NetSaveEngine = require('./engine');
 const { PROMOTIONS, PRODUCTS } = require('./data');
 const promotions = structuredClone(PROMOTIONS);
 promotions.delivery.peakHours.enabled = false;
@@ -75,6 +76,7 @@ async function withServer(app, work) {
         assert.equal(result.breakdown.total, '35.00');
         assert.ok(result.suggestion.id);
         assert.ok(result.performance.sampleCount >= 1);
+        assert.equal(result.search.degraded, false, '小目录默认不降级');
         assert.equal((await request('/api/dashboard')).summary.shownCount, 0, 'Calculation is not an impression');
         const batch = await request('/api/calculate/batch', input);
         assert.equal(batch.suggestions[0].netSaving, 3);
@@ -213,6 +215,20 @@ async function withServer(app, work) {
         assertionGroups++;
     });
 
+    await withServer(createApp({ dataDir: path.join(temporaryRoot, 'degrade'), promotions,
+        engine: new NetSaveEngine({ promotions, now: () => clock, searchCandidateLimit: 3, searchBudgetMs: 0 }) }), async request => {
+        const input = await request('/api/cart/default');
+        const result = await request('/api/calculate', input);
+        assert.equal(result.search.degraded, true, '候选超限应如实标注降级');
+        assert.equal(result.search.exhaustive, false);
+        assert.equal(result.search.degradation.pruned, true);
+        assert.match(result.search.scope, /剪枝/);
+        const batch = await request('/api/calculate/batch', input);
+        assert.equal(batch.search.degraded, true);
+        assert.ok(batch.search.degradation);
+        assertionGroups++;
+    });
+
     const defaultInput = {
         currentItems: [{ id: 'p1', quantity: 1 }, { id: 'p2', quantity: 1 }, { id: 'p3', quantity: 1 }],
         recommendItems: PRODUCTS.recommend
@@ -266,7 +282,7 @@ async function withServer(app, work) {
     let lastAcceptance;
     let expectedHistoryIds;
     await withServer(lifecycleApp, async request => {
-        assert.equal((await request('/health')).version, '1.4.0');
+        assert.equal((await request('/health')).version, '1.5.0');
         lifecycleInput = await request('/api/cart/default');
         const result = await request('/api/calculate', lifecycleInput);
         lifecyclePlans = result.alternatives;

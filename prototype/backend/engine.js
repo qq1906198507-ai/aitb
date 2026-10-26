@@ -10,6 +10,10 @@ class NetSaveEngine {
         this.latencySamples = [];
         this.now = config.now || Date.now;
         this.lastCombinationCount = 0;
+        // 实时预算：0 表示禁用；候选超过 searchCandidateLimit 时按活动价升序剪枝
+        this.searchBudgetMs = Number.isFinite(config.searchBudgetMs) ? config.searchBudgetMs : 90;
+        this.searchCandidateLimit = Number.isFinite(config.searchCandidateLimit) ? config.searchCandidateLimit : 24;
+        this.lastSearch = { degraded: false, pruned: false, truncated: false, budgetMs: 0, elapsedMs: 0 };
     }
 
     recordLatency(ms) {
@@ -144,14 +148,46 @@ class NetSaveEngine {
     rankSuggestions(currentItems, recommendItems, now = this.now(), preferences = {}) {
         const prefs = this.normalizePreferences(preferences);
         this.lastCombinationCount = 0;
+        const startedNs = process.hrtime.bigint();
+        const elapsedMs = () => Number(process.hrtime.bigint() - startedNs) / 1e6;
+        const budgetMs = this.searchBudgetMs;
+        const overBudget = () => budgetMs > 0 && elapsedMs() > budgetMs;
+        let truncated = false;
         const active = currentItems.filter(item => item.inCart && item.quantity > 0);
-        if (!active.length || !prefs.maxItems) return [];
+        if (!active.length || !prefs.maxItems) {
+            this.lastSearch = { degraded: false, pruned: false, truncated: false, budgetMs, elapsedMs: 0 };
+            return [];
+        }
         const currentBreakdown = this.calcPriceBreakdown(currentItems, now);
         const kind = currentBreakdown.orderable ? 'saving' : 'minimum-order';
         const currentSubtotalCents = cents(currentBreakdown.subtotal);
         const currentPackagingCents = cents(currentBreakdown.packagingFee);
         const currentTotalCents = cents(currentBreakdown.total);
         const candidates = this.getCandidates(currentItems, recommendItems, prefs);
+        // 目录超过上限时按价格分层轮转保留：每层从最低价开始逐层取一个，既优先低价又保留
+        // 高价档位，避免纯低价剪枝错过「加几件跨满减档」的组合。
+        let pruned = false;
+        if (this.searchCandidateLimit > 0 && candidates.length > this.searchCandidateLimit) {
+            candidates.sort((a, b) => cents(this.getActualPrice(a, now)) - cents(this.getActualPrice(b, now)));
+            const tiers = [];
+            for (const item of candidates) {
+                const price = cents(this.getActualPrice(item, now));
+                if (!tiers.length || tiers[tiers.length - 1].price !== price) tiers.push({ price, items: [] });
+                tiers[tiers.length - 1].items.push(item);
+            }
+            const kept = [];
+            for (let round = 0; kept.length < this.searchCandidateLimit; round++) {
+                let added = false;
+                for (const tier of tiers) {
+                    if (kept.length >= this.searchCandidateLimit) break;
+                    if (tier.items[round]) { kept.push(tier.items[round]); added = true; }
+                }
+                if (!added) break;
+            }
+            candidates.length = 0;
+            candidates.push(...kept);
+            pruned = true;
+        }
         const suggestions = [];
         const evaluate = (additions, itemCount, additionCostCents, packagingCents) => {
             this.lastCombinationCount++;
@@ -175,7 +211,9 @@ class NetSaveEngine {
         };
         // Increasing candidate indices enumerate each multiset once, including mixed quantities.
         const visit = (start, additions, itemCount, additionCostCents, packagingCents) => {
+            if (truncated) return;
             for (let index = start; index < candidates.length; index++) {
+                if (truncated) break;
                 const item = candidates[index];
                 const unitPrice = cents(this.getActualPrice(item, now));
                 const unitPackaging = cents(item.packagingFee || 0);
@@ -187,11 +225,14 @@ class NetSaveEngine {
                     const packaging = packagingCents + unitPackaging * quantity;
                     const next = [...additions, { ...item, quantity, inCart: true }];
                     evaluate(next, count, cost, packaging);
+                    if ((this.lastCombinationCount & 255) === 0 && overBudget()) { truncated = true; return; }
                     if (count < prefs.maxItems) visit(index + 1, next, count, cost, packaging);
+                    if (truncated) return;
                 }
             }
         };
         visit(0, [], 0, 0, 0);
+        this.lastSearch = { degraded: pruned || truncated, pruned, truncated, budgetMs, elapsedMs: elapsedMs() };
         return suggestions.sort((a, b) => (prefs.strategy === 'fewer'
             ? a.itemCount - b.itemCount || a.newTotal - b.newTotal
             : a.newTotal - b.newTotal || a.itemCount - b.itemCount)
@@ -256,13 +297,17 @@ class NetSaveEngine {
             : !candidates.length ? '没有符合库存和排除条件的可加购商品。'
             : !suggestion ? mode === 'minimum-order' ? '在当前件数、预算和商品范围内，没有达到起送门槛的方案。' : '在当前件数、预算和商品范围内，没有能减少实付的方案。'
             : mode === 'minimum-order' ? '当前未达起送门槛；以下比较达到起送后的实付，不计预计净省。' : '';
+        const degraded = this.lastSearch.degraded;
+        const scopeSuffix = degraded ? '；目录较大，已在实时预算内剪枝/截断求解，不保证全空间最优' : '';
         const calcTimeMs = Number(process.hrtime.bigint() - started) / 1_000_000;
         this.recordLatency(calcTimeMs);
         const metrics = this.getMetrics();
         return {
             breakdown, suggestion, alternatives, mode, reason, preferences,
             search: { maxItems: preferences.maxItems, candidateCount: candidates.length, evaluatedCount: this.lastCombinationCount,
-                exhaustive: true, scope: `最多${preferences.maxItems}件加购，不调整原购物车；仅搜索当前商品和约束范围` },
+                exhaustive: !degraded, degraded,
+                degradation: degraded ? { ...this.lastSearch, candidateLimit: this.searchCandidateLimit } : null,
+                scope: `最多${preferences.maxItems}件加购，不调整原购物车；仅搜索当前商品和约束范围${scopeSuffix}` },
             performance: {
                 calcTimeMs: calcTimeMs.toFixed(3), candidateCount: candidates.length,
                 combinationCount: this.lastCombinationCount, avgMs: metrics.avgCalcTime.toFixed(3),

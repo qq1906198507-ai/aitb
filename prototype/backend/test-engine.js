@@ -198,6 +198,33 @@ test('预算、排除、库存、零件数和少件策略约束完整生效', ()
     }
 });
 
+test('实时预算：目录超限按活动价剪枝并如实标注降级，返回方案仍为正净省', () => {
+    const engine = create(rules);
+    engine.searchCandidateLimit = 3;
+    const recommendItems = Array.from({ length: 8 }, (_, i) => candidate(`c${i}`, 6 - i * 0.5, 4));
+    const result = engine.calculate({ currentItems: cart(48), recommendItems });
+    assert.equal(result.search.degraded, true);
+    assert.equal(result.search.exhaustive, false);
+    assert.equal(result.search.degradation.pruned, true);
+    assert.equal(result.search.degradation.truncated, false);
+    assert.ok(result.search.evaluatedCount > 0);
+    assert.match(result.search.scope, /剪枝/);
+    assert.ok(result.suggestion);
+    assert.ok(result.suggestion.netSaving > 0);
+    assert.ok(result.suggestion.items.every(item => ['c5', 'c6', 'c7'].includes(item.id)),
+        '剪枝按活动价升序保留最低价候选');
+});
+
+test('实时预算：搜索超时截断不阻塞返回，耗时受预算约束', () => {
+    const engine = new NetSaveEngine({ promotions: rules, searchBudgetMs: 0.001, searchCandidateLimit: 24 });
+    const recommendItems = Array.from({ length: 40 }, (_, i) => candidate(`x${i}`, 1 + (i % 5), 4));
+    const result = engine.calculate({ currentItems: cart(48), recommendItems });
+    assert.equal(result.search.degraded, true);
+    assert.equal(result.search.degradation.truncated, true);
+    assert.ok(result.search.degradation.elapsedMs < 500, '截断后应在预算量级内返回而非穷举数万组合');
+    assert.ok(result.search.evaluatedCount < 30000);
+});
+
 test('包装按件计费且不算起送、满减和配送门槛，限时活动价决定商品小计', () => {
     const engine = new NetSaveEngine({ promotions: { minimumOrder: 25, fullReduction: [{ threshold: 25, discount: 5 }],
         delivery: { baseFee: 5, freeThreshold: 25 } }, now: () => 1000 });

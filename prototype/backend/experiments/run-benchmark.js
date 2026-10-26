@@ -269,7 +269,7 @@ const timings = [];
 for (const size of [5, 10, 20, 50]) {
     const perfCase = scenario(`performance-${size}`, cart(47), Array.from({ length: size }, (_, i) => product(`p${i}`, 0.5 + (i % 7) * 0.25, 4)),
         { minimumOrder: 25, fullReduction: [{ threshold: 50, discount: 10 }, { threshold: 55, discount: 14 }], coupons: [{ threshold: 40, discount: 3, stackable: true }] });
-    const engine = new Engine({ promotions: perfCase.promotions, now: () => FIXED_NOW });
+    const engine = new Engine({ promotions: perfCase.promotions, now: () => FIXED_NOW, searchBudgetMs: 0, searchCandidateLimit: 0 });
     for (let i = 0; i < 5; i++) engine.calculate(perfCase.input);
     const samples = [], internal = [], evaluated = [];
     for (let i = 0; i < perfSamples; i++) {
@@ -283,6 +283,27 @@ for (const size of [5, 10, 20, 50]) {
         internalMeanMs: mean(internal), rawMs: samples });
 }
 
+// v1.5 实时降级实验：默认预算/剪枝在 50 候选（API 上限）下的行为与全量穷举的目标一致性
+const degSetup = { minimumOrder: 25, fullReduction: [{ threshold: 50, discount: 10 }, { threshold: 55, discount: 14 }], coupons: [{ threshold: 40, discount: 3, stackable: true }] };
+const degCase = scenario('degradation-50', cart(47), Array.from({ length: 50 }, (_, i) => product(`p${i}`, 0.5 + (i % 7) * 0.25, 4)), degSetup);
+const planSignature = (plan) => plan ? `${plan.items.map((item) => `${item.id}x${item.quantity}`).join('+')}|${plan.netSaving}|${plan.newTotal}` : 'none';
+const exhaustiveEngine = new Engine({ promotions: degCase.promotions, now: () => FIXED_NOW, searchBudgetMs: 0, searchCandidateLimit: 0 });
+exhaustiveEngine.calculate(degCase.input);
+const exhaustiveStart = performance.now();
+const exhaustiveOutput = exhaustiveEngine.calculate(degCase.input);
+const exhaustiveElapsed = performance.now() - exhaustiveStart;
+const degradedEngine = new Engine({ promotions: degCase.promotions, now: () => FIXED_NOW });
+degradedEngine.calculate(degCase.input);
+const degradedStart = performance.now();
+const degradedOutput = degradedEngine.calculate(degCase.input);
+const degradedElapsed = performance.now() - degradedStart;
+const degradation = { candidates: 50, budgetMs: degradedEngine.searchBudgetMs, candidateLimit: degradedEngine.searchCandidateLimit,
+    degraded: degradedOutput.search.degraded, pruned: Boolean(degradedOutput.search.degradation?.pruned),
+    truncated: Boolean(degradedOutput.search.degradation?.truncated), elapsedMs: Number(degradedElapsed.toFixed(3)),
+    evaluatedCount: degradedOutput.search.evaluatedCount, exhaustiveElapsedMs: Number(exhaustiveElapsed.toFixed(3)),
+    exhaustiveEvaluatedCount: exhaustiveEngine.lastCombinationCount,
+    topObjectiveMatch: planSignature(degradedOutput.suggestion) === planSignature(exhaustiveOutput.suggestion) };
+
 const summary = { total: results.length, random: randomCases, boundary: boundaryCases().length,
     objectiveMatches: results.filter((row) => row.objectiveMatch).length,
     violatingScenarios: results.filter((row) => row.violations.length).length,
@@ -292,10 +313,10 @@ const summary = { total: results.length, random: randomCases, boundary: boundary
             violatingScenarios: rows.filter((row) => row.violations.length).length }];
     })),
     byMode: Object.fromEntries(['minimum-order', 'saving'].map((mode) => [mode, Object.fromEntries(['no-add', 'single', 'greedy', 'engine'].map((method) => [method, aggregate(mode, method)]))])) };
-const result = { schemaVersion: 1, productVersion: '1.3.0', generatedAt: new Date().toISOString(), seed, fixedBusinessTime: new Date(FIXED_NOW).toISOString(),
+const result = { schemaVersion: 1, productVersion: '1.5.0', generatedAt: new Date().toISOString(), seed, fixedBusinessTime: new Date(FIXED_NOW).toISOString(),
     environment: { node: process.version, platform: `${os.platform()} ${os.release()}`, architecture: os.arch(), cpu: os.cpus()[0]?.model, logicalCpus: os.cpus().length },
     sourceSha256: { engine: crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, '..', 'engine.js'))).digest('hex'), experiment: crypto.createHash('sha256').update(fs.readFileSync(__filename)).digest('hex') },
-    summary, timings, scenarios: results };
+    summary, timings, degradation, scenarios: results };
 fs.mkdirSync(path.dirname(outputFile), { recursive: true });
 fs.mkdirSync(path.dirname(reportFile), { recursive: true });
 fs.writeFileSync(outputFile, JSON.stringify(result, null, 2) + '\n', 'utf8');
@@ -366,9 +387,13 @@ ${modeTable('saving')}
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 ${timings.map((row) => `| ${row.candidates} | ${row.evaluatedMin}–${row.evaluatedMax} | ${row.samples} | ${number(row.meanMs, 3)} | ${number(row.p50Ms, 3)} | ${number(row.p95Ms, 3)} | ${number(row.p99Ms, 3)} | ${number(row.maximumMs, 3)} |`).join('\n')}
 
+## 实时降级（v1.5）
+
+候选超过 ${degradation.candidateLimit} 个时按价格分层轮转保留（低价层优先，逐层补足以覆盖各价格档位），搜索超过 ${degradation.budgetMs}ms 截断；返回方案仍经同一计价与约束校验。在 50 候选（API 上限）场景：全量穷举 ${degradation.exhaustiveEvaluatedCount.toLocaleString('en-US')} 组合 / ${number(degradation.exhaustiveElapsedMs, 1)}ms，降级路径评估 ${degradation.evaluatedCount.toLocaleString('en-US')} 组合 / ${number(degradation.elapsedMs, 1)}ms（剪枝=${degradation.pruned ? '是' : '否'}，截断=${degradation.truncated ? '是' : '否'}），首选目标与全量穷举${degradation.topObjectiveMatch ? '**一致**' : '**不一致**'}。降级路径不声称全空间最优，只保证方案可行、计价同源与不阻塞下单；是否降级由目录规模决定并由接口如实标注。
+
 ## 局限与下一步
 
-本次最优性只针对给定候选、最多四件、原购物车不变以及当前简化优惠规则。性能覆盖 5、10、20、50 个候选，已达 API 商品数组的 50 项上限；50 候选的全量穷举在本机约为 1–2 秒每次同步计算（见上表），真实目录规模需候选剪枝或降级策略，生产环境延迟需另行评估。未包含跨店、复杂优惠互斥组、满减与券的多种门槛口径、真实库存预留和账户资格，也未测多用户并发、网络或长期运行。固定种子场景集有助复现，不代表真实商品/优惠分布。v1.4 新增的偏好加权重排（算法模型第 5.1 节）是展示层启发式，不改变方案集合与金额，不在本合成实验范围内，其行为由 API 集成测试覆盖；本报告不声称该重排提升采纳率、转化或用户收益。下一步应补独立真实规则样例、平台对账数据与用户任务实验，并按起送和净省两类目的分别评估。
+本次最优性只针对给定候选、最多四件、原购物车不变以及当前简化优惠规则。性能覆盖 5、10、20、50 个候选，已达 API 商品数组的 50 项上限；50 候选的全量穷举在本机约为 1–2 秒每次同步计算（见上表），生产环境应依赖上一节的实时降级路径，其延迟与目标一致性已在同一规模测量。未包含跨店、复杂优惠互斥组、满减与券的多种门槛口径、真实库存预留和账户资格，也未测多用户并发、网络或长期运行。固定种子场景集有助复现，不代表真实商品/优惠分布。v1.4 新增的偏好加权重排（算法模型第 5.1 节）是展示层启发式，不改变方案集合与金额，不在本合成实验范围内，其行为由 API 集成测试覆盖；本报告不声称该重排提升采纳率、转化或用户收益。下一步应补独立真实规则样例、平台对账数据与用户任务实验，并按起送和净省两类目的分别评估。
 `;
 fs.writeFileSync(reportFile, report.replace(/\\“/g, '“').replace(/\\”/g, '”'), 'utf8');
 console.log(JSON.stringify({ summary, performance: timings.map(({ rawMs, ...row }) => row), outputFile, reportFile }, null, 2));

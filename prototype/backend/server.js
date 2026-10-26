@@ -130,7 +130,7 @@ function createApp(options = {}) {
         };
     }
 
-    app.get('/health', (req, res) => res.json({ status: 'ok', service: 'netsave-engine', version: '1.4.0', timestamp: new Date(now()).toISOString() }));
+    app.get('/health', (req, res) => res.json({ status: 'ok', service: 'netsave-engine', version: '1.5.0', timestamp: new Date(now()).toISOString() }));
     app.get('/api/cart/default', (req, res) => res.json({ currentItems: DEFAULT_CART, recommendItems: PRODUCTS.recommend }));
     app.get('/api/products/recommend', (req, res) => res.json(PRODUCTS.recommend));
     app.get('/api/promotions', (req, res) => res.json(promotions));
@@ -159,8 +159,9 @@ function createApp(options = {}) {
                 mode: input.currentItems.some(item => item.inCart && item.quantity > 0) && !breakdown.orderable ? 'minimum-order' : 'saving',
                 suggestions, preference: preferenceSummary(usePreference), search: { maxItems: input.preferences.maxItems,
                     candidateCount: engine.getCandidates(input.currentItems, input.recommendItems, input.preferences).length,
-                    evaluatedCount: engine.lastCombinationCount, exhaustive: true,
-                    scope: `最多${input.preferences.maxItems}件加购，不调整原购物车；仅搜索当前商品和约束范围` }
+                    evaluatedCount: engine.lastCombinationCount, exhaustive: !engine.lastSearch.degraded, degraded: engine.lastSearch.degraded,
+                    degradation: engine.lastSearch.degraded ? { ...engine.lastSearch, candidateLimit: engine.searchCandidateLimit } : null,
+                    scope: `最多${input.preferences.maxItems}件加购，不调整原购物车；仅搜索当前商品和约束范围${engine.lastSearch.degraded ? '；目录较大，已在实时预算内剪枝/截断求解，不保证全空间最优' : ''}` }
             });
         } catch (error) { next(error); }
     });
@@ -238,7 +239,7 @@ const app = createApp();
 if (require.main === module) {
     const port = Number(process.env.PORT || 3000);
     const host = process.env.HOST || '127.0.0.1';
-    app.listen(port, host, () => console.log(`NetSave Engine v1.4.0: http://${host}:${port}`));
+    app.listen(port, host, () => console.log(`NetSave Engine v1.5.0: http://${host}:${port}`));
 }
 module.exports = app;
 module.exports.createApp = createApp;

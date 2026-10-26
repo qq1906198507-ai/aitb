@@ -186,10 +186,12 @@ function renderPriceDetails() {
 
 function renderPlans() {
     const minimum = state.mode === 'minimum-order';
+    const degraded = Boolean(state.search && state.search.degraded);
     $('plansTitle').textContent = minimum ? '起送补单方案' : '可选凑单方案';
-    $('plansKicker').textContent = state.preferences.strategy === 'preference'
+    $('plansKicker').textContent = (state.preferences.strategy === 'preference'
         ? (state.preference?.applied ? '按你的本机历史偏好排序 · 演示级' : '暂无本机历史记录，先按支出更低排序')
-        : state.preferences.strategy === 'fewer' ? '在满足条件的方案中少买优先' : minimum ? '满足起送后支出更低' : '只推荐实付更低的方案';
+        : state.preferences.strategy === 'fewer' ? '在满足条件的方案中少买优先' : minimum ? '满足起送后支出更低' : '只推荐实付更低的方案')
+        + (degraded ? ' · 目录较大，实时预算内求解' : '');
     $('plansStatus').textContent = state.calculating ? '正在按你的偏好比较…' : !state.breakdown ? '连接后显示可选方案' : !state.cart.length ? '先选商品，再帮你比较' : !state.alternatives.length ? state.reason || '已比较当前候选，暂没有能减少实付的方案，无需加购。' : minimum ? `找到 ${state.alternatives.length} 套达标方案。原车无法下单，以下补单未计为净省，请确认额外支出。` : `找到 ${state.alternatives.length} 套可选方案；净省已扣除加购成本。`;
     $('alternativePlans').innerHTML = state.alternatives.map((s, index) => `<button type="button" class="plan-card${minimumPlan(s) ? ' minimum-plan' : ''}${s.id === state.suggestion?.id ? ' selected' : ''}" data-plan-id="${esc(s.id)}" aria-pressed="${s.id === state.suggestion?.id}" ${locked() || state.calculating || state.preferencesInvalid ? 'disabled' : ''} aria-label="查看方案${index + 1}：${esc(itemNames(s))}，${esc(planBenefit(s))}">
         <span class="plan-row"><span class="plan-name"><span class="plan-badge">${index ? `备选 ${index}` : state.preferences.strategy === 'preference' ? '智能推荐' : state.preferences.strategy === 'fewer' ? '少买优先' : minimumPlan(s) ? '支出最少' : '净省最多'}</span>${esc(itemNames(s))}</span><strong class="plan-saving">${esc(planBenefit(s))}</strong></span><span class="plan-row"><span class="plan-cost">加购 ${money(s.additionCost)} · 共${s.itemCount}件</span><span class="plan-total">${minimumPlan(s) ? esc(paymentChangeText(s)) : `实付 ${money(s.currentTotal)} → <strong>${money(s.newTotal)}</strong>`}</span></span><span class="plan-actions">查看计算与选择此方案 →</span></button>`).join('');
@@ -229,7 +231,7 @@ async function recalc() {
         state.preference = result.preference || null;
         state.mode = result.mode || 'saving'; state.reason = result.reason || ''; state.search = result.search || null;
         state.roundTripMs = performance.now() - started; state.connected = true;
-        $('calcHint').textContent = `服务端计算 · 本次${state.performance.calcTimeMs}ms`;
+        $('calcHint').textContent = `服务端计算 · 本次${state.performance.calcTimeMs}ms${result.search?.degraded ? ' · 已降级' : ''}`;
         if (state.storageWarning) setStatus('error', '已连接；浏览器未能保存当前状态，请检查存储后重试', true);
         else setStatus('', '已连接 · 按起送门槛与少买偏好计算');
     } catch (error) {
