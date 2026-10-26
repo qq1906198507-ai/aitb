@@ -31,5 +31,5 @@ echo The local service did not start. Check the NetSave Backend window and port 
 pause
 exit /b 1
 :ready
-start "" "http://127.0.0.1:3000/mobile-api.html"
+start "" "http://127.0.0.1:3000/"
 endlocal
