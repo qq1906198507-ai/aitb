@@ -36,6 +36,13 @@
         .hub-steps .close-row { margin-top: 10px; text-align: right; }
         .hub-steps .close { border: 1px solid #e2e8f0; background: #fff; color: #475569; border-radius: 7px; padding: 4px 10px; font: inherit; font-size: 11px; cursor: pointer; }
         .hub-steps .close:hover { background: #f8fafc; }
+        .hub-status { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #64748b; white-space: nowrap; }
+        .hub-status i { width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; display: inline-block; }
+        .hub-status.online { color: #15803d; }
+        .hub-status.online i { background: #16a34a; }
+        .hub-status.offline { color: #b91c1c; }
+        .hub-status.offline i { background: #dc2626; }
+        .hub-loader { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 15; background: #0f172a; color: #fff; font-size: 12px; border-radius: 999px; padding: 6px 14px; box-shadow: 0 6px 20px rgba(15, 23, 42, .25); }
         @media (min-width: 1100px) {
             .hub-views.split .pane { display: block; }
             .hub-views.split .pane-left { left: 0; width: 50%; border-right: 1px solid #e2e8f0; }
@@ -50,23 +57,24 @@
 </head>
 <body>
     <div class="hub-top">
-        <div class="hub-brand"><strong>刚好·净省凑单 · 演示中心</strong><span>本机 3000 服务 · 切换不刷新；宽屏时「联动体验 + 数据看板」自动并排，数字键 1–6 切换</span></div>
+        <div class="hub-brand"><strong>刚好·净省凑单 · 演示中心</strong><span class="hub-status" id="hubStatus" role="status"><i aria-hidden="true"></i><span id="hubStatusText">正在检测服务…</span></span><span>切换不刷新 · 数字键 1–6 · 宽屏自动并排</span></div>
         <nav class="hub-tabs" id="tabs" aria-label="演示页面切换"></nav>
         <div class="hub-alert" id="hubAlert" hidden role="alert">
             <span>⚠️ 本机服务未连接。请在 prototype 目录双击 start-demo.bat 启动后，再点「重试」。</span>
             <button type="button" id="retryBtn">重试</button>
         </div>
     </div>
-    <main class="hub-views" id="views"></main>
+    <main class="hub-views" id="views"><div class="hub-loader" id="hubLoader" hidden>页面加载中…</div></main>
     <button type="button" class="hub-fab" id="stepsToggle" aria-expanded="false" aria-controls="stepsPanel">📋 演示步骤</button>
     <section class="hub-steps" id="stepsPanel" hidden aria-label="演示步骤速查">
         <h2>演示流程速查</h2>
         <ol>
-            <li>在 <button type="button" class="jump" data-jump="api">联动体验</button> 点「满减净省示例」，比较方案并核对 ¥35 → ¥32（净省 ¥3）；切到 <button type="button" class="jump" data-jump="dashboard">数据看板</button>，有效采纳 +1、累计净省 +3。</li>
-            <li>调整加购件数、商品预算、排除项与「支出更低／件数更少」排序，观察约束对方案的影响；0 件表示不加购。</li>
-            <li>在联动体验点「起送补单示例」（原车 ¥20，低于 ¥25 起送价）：采纳后有效采纳数 +1，累计净省保持不变。</li>
-            <li>撤销刚才的采纳：购物车恢复、分类计数扣回、原记录保留；<button type="button" class="jump" data-jump="history">历史记录</button> 可按类型筛选。</li>
-            <li>再次打开方案选「不加购」记一次忽略，最后在看板导出 JSON/CSV；需要从零开始时用看板的「清空演示数据」。</li>
+            <li>在 <button type="button" class="jump" data-jump="api">联动体验</button> 点「满减净省示例」，比较方案并核对 ¥35 → ¥32（净省 ¥3）；方案区可见「服务端计算 · 本次 X ms」实时耗时。</li>
+            <li>切到 <button type="button" class="jump" data-jump="dashboard">数据看板</button>：有效采纳 +1、累计净省 +3，每 2 秒自动更新。</li>
+            <li>回到联动体验调整件数、预算与排除项，观察约束影响；再把策略切到「符合我的偏好」，采纳一两次同类方案后重算，看方案次序按本机历史变化（金额不变）。</li>
+            <li>点「起送补单示例」（原车 ¥20，低于 ¥25 起送价）：采纳后有效采纳 +1、起送转化 +1，累计净省保持不变。</li>
+            <li>撤销采纳：购物车恢复、计数扣回、原记录保留；<button type="button" class="jump" data-jump="history">历史记录</button> 可按类型筛选。</li>
+            <li>打开方案选「不加购」记一次忽略，在看板导出 JSON/CSV；需要从零开始时用看板的「清空演示数据」。</li>
         </ol>
         <div class="close-row"><button type="button" class="close" id="stepsClose">收起</button></div>
     </section>
@@ -103,7 +111,9 @@
             const frame = document.createElement('iframe');
             frame.title = view.label;
             frame.src = view.src;
+            loader.hidden = false;
             frame.addEventListener('load', () => {
+                loader.hidden = true;
                 injectHubStyle(frame);
                 remapNavigatedFrame(frame, view);
             });
@@ -182,11 +192,30 @@
             if (index >= 0) activate(VIEWS[index].id, true);
         });
 
+        // 方向键在标签间移动（焦点在标签上时），符合 tabs 键盘惯例
+        tabs.addEventListener('keydown', event => {
+            if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+            const buttons = [...tabs.children];
+            const current = buttons.findIndex(button => button.dataset.view === activeId);
+            const next = event.key === 'ArrowRight' ? (current + 1) % buttons.length
+                : (current - 1 + buttons.length) % buttons.length;
+            activate(buttons[next].dataset.view, true);
+            buttons[next].focus();
+            event.preventDefault();
+        });
+
         wideScreen.addEventListener('change', render);
         // 部分内嵌环境调整尺寸时不派发媒体查询 change 事件，resize 兜底
         window.addEventListener('resize', render);
 
         // 服务可用性：未启动时显示横幅；恢复后重载已创建的页面，去掉错误页
+        const loader = document.getElementById('hubLoader');
+        const statusEl = document.getElementById('hubStatus');
+        const statusText = document.getElementById('hubStatusText');
+        function setStatus(kind, text) {
+            statusEl.className = 'hub-status' + (kind ? ' ' + kind : '');
+            statusText.textContent = text;
+        }
         let serverDown = true;
         function showAlert(message) {
             alertBox.firstElementChild.textContent = message;
@@ -195,12 +224,15 @@
         async function checkHealth() {
             if (location.protocol === 'file:') {
                 serverDown = true;
+                setStatus('offline', '文件方式打开 · 无后端');
                 showAlert('⚠️ 当前是直接双击打开的文件，后端接口不可用。请启动本机服务（双击 start-demo.bat）后访问 http://127.0.0.1:3000/');
                 return;
             }
             try {
                 const response = await fetch('/health', { cache: 'no-store' });
                 if (!response.ok) throw new Error(String(response.status));
+                let version = '';
+                try { version = (await response.json()).version || ''; } catch (_) { /* 健康响应异常时只显示连接状态 */ }
                 if (serverDown) {
                     for (const frame of frames.values()) {
                         if (frame.src) frame.src = frame.src;
@@ -208,8 +240,10 @@
                 }
                 serverDown = false;
                 alertBox.hidden = true;
+                setStatus('online', version ? `服务已连接 · v${version}` : '服务已连接');
             } catch (_) {
                 serverDown = true;
+                setStatus('offline', '服务未连接');
                 showAlert('⚠️ 本机服务未连接。请在 prototype 目录双击 start-demo.bat 启动后，再点「重试」。');
             }
         }
